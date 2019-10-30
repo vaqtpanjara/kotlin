@@ -482,27 +482,23 @@ open class KotlinNativeLink : AbstractKotlinNativeCompile<KotlinCommonToolOption
         binary.outputDirectory = destinationDir
     }
 
-    @get:Input
     override val outputKind: CompilerOutputKind
-        get() = binary.outputKind.compilerOutputKind
+        @Input get() = binary.outputKind.compilerOutputKind
 
-    @get:Input
     override val optimized: Boolean
-        get() = binary.optimized
+        @Input get() = binary.optimized
 
-    @get:Input
     override val debuggable: Boolean
-        get() = binary.debuggable
+        @Input get() = binary.debuggable
 
-    @get:Internal
     override val baseName: String
-        get() = binary.baseName
+        @Input get() = binary.baseName
 
     @get:Input
     protected val konanCacheKind: NativeCacheKind
         get() = project.konanCacheKind
 
-    inner class NativeLinkOptions: KotlinCommonToolOptions {
+    inner class NativeLinkOptions : KotlinCommonToolOptions {
         override var allWarningsAsErrors: Boolean = false
         override var suppressWarnings: Boolean = false
         override var verbose: Boolean = false
@@ -550,22 +546,19 @@ open class KotlinNativeLink : AbstractKotlinNativeCompile<KotlinCommonToolOption
     // endregion.
 
     // Binary-specific options.
-    @get:Optional
-    @get:Input
     val entryPoint: String?
+        @Input
+        @Optional
         get() = (binary as? Executable)?.entryPoint
 
-    @get:Input
     val linkerOpts: List<String>
-        get() = binary.linkerOpts
+        @Input get() = binary.linkerOpts
 
-    @get:Input
     val processTests: Boolean
-        get() = binary is TestExecutable
+        @Input get() = binary is TestExecutable
 
-    @get:InputFiles
     val exportLibraries: FileCollection
-        get() = binary.let {
+    @InputFile get() = binary.let {
             if (it is AbstractNativeLibrary) {
                 project.configurations.getByName(it.exportConfigurationName)
             } else {
