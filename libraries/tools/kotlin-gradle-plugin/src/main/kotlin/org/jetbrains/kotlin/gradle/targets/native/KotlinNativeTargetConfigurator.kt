@@ -48,7 +48,7 @@ open class KotlinNativeTargetConfigurator<T : KotlinNativeTarget>(
         return buildDir.resolve("classes/kotlin/$targetSubDirectory${compilation.name}")
     }
 
-    private fun AbstractKotlinNativeCompile<*>.addCompilerPlugins() {
+    private fun AbstractKotlinNativeCompile<*, *>.addCompilerPlugins() {
         SubpluginEnvironment
             .loadSubplugins(project, kotlinPluginVersion)
             .addSubpluginOptions(project, this, compilerPluginOptions)
@@ -119,6 +119,7 @@ open class KotlinNativeTargetConfigurator<T : KotlinNativeTarget>(
             KotlinNativeLink::class.java
         ).apply {
             val target = binary.target
+            compilation.set(binary.compilation)
             this.binary = binary
             group = BasePlugin.BUILD_GROUP
             description = "Links ${binary.outputKind.description} '${binary.name}' for a target '${target.name}'."
@@ -154,7 +155,7 @@ open class KotlinNativeTargetConfigurator<T : KotlinNativeTarget>(
             compilation.compileKotlinTaskName,
             KotlinNativeCompile::class.java
         ).also { task ->
-            task.compilation = compilation
+            task.compilation.set(compilation)
             task.group = BasePlugin.BUILD_GROUP
             task.description = "Compiles a klibrary from the '${compilation.name}' " +
                     "compilation for target '${compilation.platformType.name}'."

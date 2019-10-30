@@ -207,7 +207,7 @@ internal open class GradleCompilerRunner(protected val task: Task) {
                         } else {
                             if (target is KotlinWithJavaTarget<*>) {
                                 val jar = project.tasks.getByName(target.artifactsTaskName) as Jar
-                                jarToClassListFile[jar.archivePathCompatible.canonicalFile] = target.defaultArtifactClassesListFile
+                                jarToClassListFile[jar.archivePathCompatible.canonicalFile] = target.defaultArtifactClassesListFile.get()
                             }
                         }
                     }
