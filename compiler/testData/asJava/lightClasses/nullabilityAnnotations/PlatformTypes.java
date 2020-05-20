@@ -1,11 +1,14 @@
-public final class PlatformTypes {
-    public final java.lang.String simplyPlatform() { /* compiled code */ }
+public final class PlatformTypes /* PlatformTypes*/ {
+  @null()
+  public  PlatformTypes();//  .ctor()
 
-    @org.jetbrains.annotations.Nullable
-    public final java.util.List<java.lang.String> bothNullable() { /* compiled code */ }
+  @null()
+  public final java.lang.String simplyPlatform();//  simplyPlatform()
 
-    @org.jetbrains.annotations.NotNull
-    public final java.util.List<java.lang.String> bothNotNull() { /* compiled code */ }
+  @org.jetbrains.annotations.NotNull()
+  public final java.util.List<java.lang.String> bothNotNull();//  bothNotNull()
 
-    public PlatformTypes() { /* compiled code */ }
+  @org.jetbrains.annotations.Nullable()
+  public final java.util.List<java.lang.String> bothNullable();//  bothNullable()
+
 }

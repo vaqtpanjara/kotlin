@@ -1,7 +1,9 @@
-public final class C {
-    @kotlin.jvm.JvmField
-    @org.jetbrains.annotations.NotNull
-    public final java.lang.String foo;
+public final class C /* C*/ {
+  @kotlin.jvm.JvmField()
+  @org.jetbrains.annotations.NotNull()
+  public final java.lang.String foo;
 
-    public C() { /* compiled code */ }
+  @null()
+  public  C();//  .ctor()
+
 }

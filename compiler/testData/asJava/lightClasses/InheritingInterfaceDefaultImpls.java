@@ -1,7 +1,9 @@
-public final class Inheritor implements p.I, p.I2 {
-    public final void f() { /* compiled code */ }
+public final class Inheritor /* p.Inheritor*/ implements p.I, p.I2 {
+  @null()
+  public  Inheritor();//  .ctor()
 
-    public void g() { /* compiled code */ }
+  public final void f();//  f()
 
-    public Inheritor() { /* compiled code */ }
+  public void g();//  g()
+
 }

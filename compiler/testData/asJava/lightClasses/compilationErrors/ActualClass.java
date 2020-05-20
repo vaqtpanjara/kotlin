@@ -1,3 +1,5 @@
-public final class B {
-    public B() { /* compiled code */ }
+public final class B /* p.B*/ {
+  @null()
+  public  B();//  .ctor()
+
 }

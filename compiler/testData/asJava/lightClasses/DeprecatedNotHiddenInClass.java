@@ -1,9 +1,8 @@
-public final class A {
-    /**
-     * @deprecated
-     */
-    @kotlin.Deprecated(message = "f")
-    public final void f() { /* compiled code */ }
+public final class A /* a.A*/ {
+  @kotlin.Deprecated(message = "f")
+  public final void f();//  f()
 
-    public A() { /* compiled code */ }
+  @null()
+  public  A();//  .ctor()
+
 }

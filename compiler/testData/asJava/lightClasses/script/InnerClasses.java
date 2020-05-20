@@ -1,24 +1,29 @@
-public class InnerClasses extends kotlin.script.templates.standard.ScriptTemplateWithArgs {
-    public static final void main(java.lang.String[] p) { /* compiled code */ }
+public class InnerClasses /* InnerClasses*/ {
+  @null()
+  public  InnerClasses(@null() java.lang.String[]);//  .ctor(java.lang.String[])
 
-    public InnerClasses(java.lang.String[] p) { /* compiled code */ }
+  public static final void main(@null() java.lang.String[]);//  main(java.lang.String[])
 
-    public static final class Bar {
-        private final int b;
-        private final int a;
 
-        public final int getB() { /* compiled code */ }
+public static final class Bar /* null*/ {
+  private final int a;
 
-        public final int getAPlusB() { /* compiled code */ }
+  private final int b;
 
-        public final int getA() { /* compiled code */ }
+  @null()
+  public  Bar(int);//  .ctor(int)
 
-        public Bar(int a) { /* compiled code */ }
+  public final int getA();//  getA()
 
-        public static final class Baz {
-            public final void doSomething() { /* compiled code */ }
+  public final int getAPlusB();//  getAPlusB()
 
-            public Baz() { /* compiled code */ }
-        }
-    }
-}
+  public final int getB();//  getB()
+
+
+public static final class Baz /* null*/ {
+  @null()
+  public  Baz();//  .ctor()
+
+  public final void doSomething();//  doSomething()
+
+}}}
