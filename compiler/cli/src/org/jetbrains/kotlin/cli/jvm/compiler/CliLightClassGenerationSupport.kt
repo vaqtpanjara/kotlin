@@ -62,7 +62,7 @@ import org.jetbrains.kotlin.types.KotlinType
  */
 class CliLightClassGenerationSupport(private val traceHolder: CliTraceHolder) : LightClassGenerationSupport() {
 
-    private val ktUltraLightSupportImpl = object : KtUltraLightSupport {
+    private val ultraLightSupport = object : KtUltraLightSupport {
 
         private val languageVersionSettings: LanguageVersionSettings
             get() = getContext().languageVersionSettings ?: LanguageVersionSettingsImpl.DEFAULT
@@ -73,33 +73,6 @@ class CliLightClassGenerationSupport(private val traceHolder: CliTraceHolder) : 
         override val moduleDescriptor get() = traceHolder.module
 
         override val moduleName: String get() = JvmCodegenUtil.getModuleName(moduleDescriptor)
-
-        override fun findAnnotation(owner: KtAnnotated, fqName: FqName): Pair<KtAnnotationEntry, AnnotationDescriptor>? {
-            for (entry in owner.annotationEntries) {
-                val descriptor = analyze(entry).get(BindingContext.ANNOTATION, entry)
-                if (descriptor?.fqName == fqName) {
-                    return Pair(entry, descriptor)
-                }
-            }
-
-            if (owner is KtPropertyAccessor) {
-                // We might have from the beginning just resolve the descriptor of the accessor
-                // But we trying to avoid analysis in case property doesn't have any relevant annotations at all
-                // (in case of `findAnnotation` returns null)
-                if (findAnnotation(owner.property, fqName) == null) return null
-
-
-                val accessorDescriptor = resolveToDescriptor(owner) ?: return null
-
-                // Just reuse the logic of use-site targeted annotation from the compiler
-                val annotationDescriptor = accessorDescriptor.annotations.findAnnotation(fqName) ?: return null
-                val entry = annotationDescriptor.source.getPsi() as? KtAnnotationEntry ?: return null
-
-                return entry to annotationDescriptor
-            }
-
-            return null
-        }
 
         override val deprecationResolver: DeprecationResolver
             get() = DeprecationResolver(
@@ -132,7 +105,7 @@ class CliLightClassGenerationSupport(private val traceHolder: CliTraceHolder) : 
         if (files.any { it.isScript() }) return null
 
         val filesToSupports: List<Pair<KtFile, KtUltraLightSupport>> = files.map {
-            it to ktUltraLightSupportImpl
+            it to UltraLightSupportViaService(it)
         }
 
         return KtUltraLightClassForFacade(
@@ -149,7 +122,7 @@ class CliLightClassGenerationSupport(private val traceHolder: CliTraceHolder) : 
             return null
         }
 
-        return ktUltraLightSupportImpl.let { support ->
+        return UltraLightSupportViaService(element).let { support ->
             when {
                 element is KtObjectDeclaration && element.isObjectLiteral() ->
                     KtUltraLightClassForAnonymousDeclaration(element, support)
@@ -165,7 +138,9 @@ class CliLightClassGenerationSupport(private val traceHolder: CliTraceHolder) : 
     }
 
     override fun createUltraLightClassForScript(script: KtScript): KtUltraLightClassForScript? =
-        KtUltraLightClassForScript(script, support = ktUltraLightSupportImpl)
+        KtUltraLightClassForScript(script, support = UltraLightSupportViaService(script))
+
+    override fun getUltraLightClassSupport(element: KtElement): KtUltraLightSupport = ultraLightSupport
 
     override fun createDataHolderForClass(classOrObject: KtClassOrObject, builder: LightClassBuilder): LightClassDataHolder.ForClass {
         //force resolve companion for light class generation
