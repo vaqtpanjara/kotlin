@@ -59,6 +59,9 @@ abstract class KtLightModifierList<out T : KtLightElement<KtModifierListOwner, P
     }
 
     private fun computeAnnotations(): List<KtLightAbstractAnnotation> {
+
+        if (!isFromSources(owner)) return nonSourceAnnotationsForAnnotationType(emptyList())
+
         val annotationsForEntries = owner.givenAnnotations ?: lightAnnotationsForEntries(this)
         val modifierListOwner = parent
         if (modifierListOwner is KtLightClassForSourceDeclaration && modifierListOwner.isAnnotationType) {
