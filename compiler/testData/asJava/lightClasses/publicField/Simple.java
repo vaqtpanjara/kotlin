@@ -3,7 +3,6 @@ public final class C /* C*/ {
   @org.jetbrains.annotations.NotNull()
   public final java.lang.String foo;
 
-  @null()
   public  C();//  .ctor()
 
 }

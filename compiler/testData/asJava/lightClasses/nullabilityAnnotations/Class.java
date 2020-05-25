@@ -1,22 +1,19 @@
 public final class Class /* Class*/ {
+  @org.jetbrains.annotations.NotNull()
   private final java.lang.String notNullVal;
 
+  @org.jetbrains.annotations.NotNull()
+  private java.lang.String notNullVar;
+
+  @org.jetbrains.annotations.Nullable()
   private final java.lang.String nullableVal;
+
+  @org.jetbrains.annotations.Nullable()
+  private java.lang.String nullableVar;
 
   private final java.lang.String privateN;
 
   private final java.lang.String privateNN;
-
-  private java.lang.String notNullVar;
-
-  private java.lang.String nullableVar;
-
-  @null()
-  public  Class();//  .ctor()
-
-  @org.jetbrains.annotations.NotNull()
-  @org.jetbrains.annotations.NotNull()
-  public final java.lang.String notNullWithNN();//  notNullWithNN()
 
   @org.jetbrains.annotations.NotNull()
   @org.jetbrains.annotations.Nullable()
@@ -52,11 +49,10 @@ public final class Class /* Class*/ {
   public final java.lang.String notNull(@org.jetbrains.annotations.NotNull() java.lang.String);//  notNull(java.lang.String)
 
   @org.jetbrains.annotations.NotNull()
-  public final void setNullableVarWithGetSet(@org.jetbrains.annotations.Nullable() java.lang.String);//  setNullableVarWithGetSet(java.lang.String)
+  public final java.lang.String notNullWithNN();//  notNullWithNN()
 
-  @org.jetbrains.annotations.Nullable()
-  @org.jetbrains.annotations.Nullable()
-  public final java.lang.String nullableWithN();//  nullableWithN()
+  @org.jetbrains.annotations.NotNull()
+  public final void setNullableVarWithGetSet(@org.jetbrains.annotations.Nullable() java.lang.String);//  setNullableVarWithGetSet(java.lang.String)
 
   @org.jetbrains.annotations.Nullable()
   public final java.lang.String getNullableVal();//  getNullableVal()
@@ -68,7 +64,12 @@ public final class Class /* Class*/ {
   public final java.lang.String nullable(@org.jetbrains.annotations.Nullable() java.lang.String);//  nullable(java.lang.String)
 
   @org.jetbrains.annotations.Nullable()
+  public final java.lang.String nullableWithN();//  nullableWithN()
+
+  @org.jetbrains.annotations.Nullable()
   public final void setNotNullVarWithGetSet(@org.jetbrains.annotations.NotNull() java.lang.String);//  setNotNullVarWithGetSet(java.lang.String)
+
+  public  Class();//  .ctor()
 
   public final void setNotNullVar(@org.jetbrains.annotations.NotNull() java.lang.String);//  setNotNullVar(java.lang.String)
 

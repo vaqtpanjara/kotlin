@@ -1,7 +1,4 @@
 public final class Annotations /* p.Annotations*/ {
-  @null()
-  public  Annotations();//  .ctor()
-
   @p.R(s = "a")
   @p.R(s = "b")
   @p.R(s = "c")
@@ -16,5 +13,7 @@ public final class Annotations /* p.Annotations*/ {
 
   @p.R(s = "a")
   public final void repeatables2();//  repeatables2()
+
+  public  Annotations();//  .ctor()
 
 }

@@ -7,11 +7,10 @@ public final class A /* A*/ {
   @kotlin.jvm.Synchronized()
   public final synchronized strictfp void f();//  f()
 
-  @null()
-  public  A();//  .ctor()
-
   @org.jetbrains.annotations.NotNull()
   public final java.lang.String getC();//  getC()
+
+  public  A();//  .ctor()
 
   public final void setC(@org.jetbrains.annotations.NotNull() java.lang.String);//  setC(java.lang.String)
 

@@ -11,7 +11,6 @@ public final class C /* C*/ {
   @org.jetbrains.annotations.NotNull()
   public final java.lang.String foo(@org.jetbrains.annotations.NotNull() java.lang.String, @org.jetbrains.annotations.Nullable() java.lang.String);//  foo(java.lang.String, java.lang.String)
 
-  @null()
   public  C();//  .ctor()
 
 }

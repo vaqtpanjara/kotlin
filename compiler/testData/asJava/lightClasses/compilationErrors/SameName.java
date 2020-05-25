@@ -7,11 +7,10 @@ public final class A /* A*/ {
 
   private final java.lang.String j;
 
-  @null()
-  public  A();//  .ctor()
-
   @org.jetbrains.annotations.NotNull()
   public final java.lang.String g(int, double);//  g(int, double)
+
+  public  A();//  .ctor()
 
   public final int g(int, double);//  g(int, double)
 

@@ -1,7 +1,4 @@
 public abstract interface Generic /* Generic*/<N, NN>  {
-  @null()
-  public abstract N a(@null() N);//  a(N)
-
   @org.jetbrains.annotations.NotNull()
   public abstract NN b(@org.jetbrains.annotations.NotNull() NN);//  b(NN)
 
@@ -10,5 +7,7 @@ public abstract interface Generic /* Generic*/<N, NN>  {
 
   @org.jetbrains.annotations.Nullable()
   public abstract NN b1(@org.jetbrains.annotations.Nullable() NN);//  b1(NN)
+
+  public abstract N a(N);//  a(N)
 
 }

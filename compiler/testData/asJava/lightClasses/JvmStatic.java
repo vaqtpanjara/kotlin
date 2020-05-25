@@ -1,29 +1,16 @@
-<<<<<<< HEAD
-public final class A {
-    @org.jetbrains.annotations.NotNull
-    public static final A.Companion Companion;
-=======
 public final class A /* A*/ {
-  @null()
+  @org.jetbrains.annotations.NotNull()
   public static final A.Companion Companion;
->>>>>>> TESTS
 
   @kotlin.jvm.JvmStatic()
   public static final void f();//  f()
 
-  @null()
   public  A();//  .ctor()
 
-<<<<<<< HEAD
-    public static final class B {
-        @org.jetbrains.annotations.NotNull
-        public static final A.B INSTANCE;
-=======
->>>>>>> TESTS
 
 
 public static final class B /* A.B*/ {
-  @null()
+  @org.jetbrains.annotations.NotNull()
   public static final A.B INSTANCE;
 
   @kotlin.jvm.JvmStatic()
