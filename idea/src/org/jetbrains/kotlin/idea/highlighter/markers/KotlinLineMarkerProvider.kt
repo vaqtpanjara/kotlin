@@ -40,7 +40,6 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.containingClassOrObject
 import org.jetbrains.kotlin.psi.psiUtil.getPrevSiblingIgnoringWhitespaceAndComments
-import org.jetbrains.kotlin.resolve.multiplatform.ExpectedActualResolver
 import java.awt.event.MouseEvent
 import java.util.*
 import javax.swing.ListCellRenderer
@@ -370,14 +369,14 @@ private fun collectMultiplatformMarkers(
     result: LineMarkerInfos
 ) {
     if (KotlinLineMarkerOptions.actualOption.isEnabled) {
-        if (declaration.isExpectDeclaration()) {
+        if (declaration.isEffectivelyExpect()) {
             collectActualMarkers(declaration, result)
             return
         }
     }
 
     if (KotlinLineMarkerOptions.expectOption.isEnabled) {
-        if (!declaration.isExpectDeclaration() && declaration.isEffectivelyActual()) {
+        if (!declaration.isEffectivelyExpect() && declaration.isEffectivelyActual()) {
             collectExpectedMarkers(declaration, result)
             return
         }
