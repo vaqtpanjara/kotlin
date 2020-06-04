@@ -77,13 +77,9 @@ fun DeclarationDescriptor.actualsForExpected(): Collection<DeclarationDescriptor
     return emptyList()
 }
 
-fun KtDeclaration.hasAtLeastOneActual() = actualsForExpected().isNotEmpty()
-
-// null means "any platform" here
-fun KtDeclaration.actualsForExpected(module: Module? = null): Set<KtDeclaration> =
+fun KtDeclaration.actualsForExpected(): Set<KtDeclaration> =
     resolveToDescriptorIfAny(BodyResolveMode.FULL)
         ?.actualsForExpected()
-        ?.filter { module == null || (it.module.getCapability(ModuleInfo.Capability) as? ModuleSourceInfo)?.module == module }
         ?.mapNotNullTo(LinkedHashSet()) {
             DescriptorToSourceUtils.descriptorToDeclaration(it) as? KtDeclaration
         } ?: emptySet()
