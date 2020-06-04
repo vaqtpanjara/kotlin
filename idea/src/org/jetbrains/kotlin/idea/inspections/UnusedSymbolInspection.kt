@@ -68,7 +68,6 @@ import org.jetbrains.kotlin.idea.search.usagesSearch.isDataClassProperty
 import org.jetbrains.kotlin.idea.stubindex.KotlinSourceFilterScope
 import org.jetbrains.kotlin.idea.util.ProjectRootsUtil
 import org.jetbrains.kotlin.idea.util.application.isUnitTestMode
-import org.jetbrains.kotlin.idea.util.hasActualsFor
 import org.jetbrains.kotlin.js.resolve.diagnostics.findPsi
 import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.load.java.JvmAbi
@@ -81,6 +80,7 @@ import org.jetbrains.kotlin.resolve.bindingContextUtil.isUsedAsExpression
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 import org.jetbrains.kotlin.resolve.isInlineClassType
 import org.jetbrains.kotlin.resolve.lazy.BodyResolveMode
+import org.jetbrains.kotlin.resolve.multiplatform.findAnyActualForExpected
 import org.jetbrains.kotlin.util.findCallableMemberBySignature
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
@@ -572,8 +572,8 @@ class UnusedSymbolInspection : AbstractKotlinInspection() {
         if (descriptor !is MemberDescriptor) return false
         val commonModuleDescriptor = declaration.containingKtFile.findModuleDescriptor()
 
-        return commonModuleDescriptor.implementingDescriptors.any { it.hasActualsFor(descriptor) } ||
-                commonModuleDescriptor.hasActualsFor(descriptor)
+        return commonModuleDescriptor.implementingDescriptors.any { descriptor.findAnyActualForExpected(it).isNotEmpty() } ||
+                descriptor.findAnyActualForExpected(commonModuleDescriptor).isNotEmpty()
     }
 
     override fun createOptionsPanel(): JComponent? {

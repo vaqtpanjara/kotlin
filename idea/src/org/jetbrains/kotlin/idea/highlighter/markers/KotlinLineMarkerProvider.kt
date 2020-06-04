@@ -463,7 +463,8 @@ private fun collectActualMarkers(
 ) {
     if (!KotlinLineMarkerOptions.actualOption.isEnabled) return
     if (declaration.requiresNoMarkers()) return
-    if (!declaration.hasAtLeastOneActual()) return
+
+    if (declaration.actualDeclarations().isEmpty()) return
 
     val anchor = declaration.expectOrActualAnchor
 
