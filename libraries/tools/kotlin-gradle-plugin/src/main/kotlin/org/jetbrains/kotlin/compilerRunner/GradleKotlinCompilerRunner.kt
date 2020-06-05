@@ -28,6 +28,7 @@ import org.jetbrains.kotlin.gradle.plugin.mpp.isMain
 import org.jetbrains.kotlin.gradle.plugin.mpp.ownModuleName
 import org.jetbrains.kotlin.gradle.tasks.GradleCompileTask
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompileTaskData
+import org.jetbrains.kotlin.gradle.tasks.locateTask
 import org.jetbrains.kotlin.gradle.utils.archivePathCompatible
 import org.jetbrains.kotlin.gradle.utils.newTmpFile
 import org.jetbrains.kotlin.gradle.utils.relativeToRoot
@@ -202,7 +203,7 @@ internal open class GradleCompilerRunner(protected val task: Task) {
 
                     if (compilation.isMain()) {
                         if (isMultiplatformProject) {
-                            (project.tasks.findByName(target.artifactsTaskName) as? AbstractArchiveTask)?.let { jarTask ->
+                            project.locateTask<AbstractArchiveTask>(target.artifactsTaskName)?.configure { jarTask ->
                                 jarToModule[jarTask.archivePathCompatible.canonicalFile] = module
                             }
                         } else {
