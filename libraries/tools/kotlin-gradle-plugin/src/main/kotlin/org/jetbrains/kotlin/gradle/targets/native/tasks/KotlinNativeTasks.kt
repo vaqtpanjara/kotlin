@@ -113,7 +113,6 @@ private fun Collection<File>.filterKlibsPassedToCompiler(project: Project) = fil
 abstract class AbstractKotlinNativeCompile<T : KotlinCommonToolOptions, K : AbstractKotlinNativeCompilation> : AbstractCompile() {
 
     init {
-//        System.out.println("NPE bug: init compilation $compilation")
         sourceCompatibility = "1.6"
         targetCompatibility = "1.6"
     }
@@ -382,35 +381,13 @@ open class KotlinNativeCompile : AbstractKotlinNativeCompile<KotlinCommonOptions
     // endregion.
 
     // region Kotlin options.
-    private inner class NativeCompileOptions : KotlinCommonOptions {
-        override var apiVersion: String?
-            get() = languageSettings.apiVersion
-            set(value) {
-                languageSettings.apiVersion = value
-            }
-
-        override var languageVersion: String?
-            get() = this@KotlinNativeCompile.languageVersion
-            set(value) {
-                languageSettings.languageVersion = value
-            }
-
-        override var allWarningsAsErrors: Boolean = false
-        override var suppressWarnings: Boolean = false
-        override var verbose: Boolean = false
-
-        override var freeCompilerArgs: List<String> = listOf()
-        // Store the provider in order for Gradle Instant Execution to capture the state
-//        private val freeCompilerArgsImpl by compilation.map { it.extraOptsNoWarn }
-
-    }
+    override val kotlinOptions: KotlinCommonOptions
+        get() = compilation.kotlinOptions
 
     @get:Input
     override val additionalCompilerOptions: Provider<Collection<String>> = project.provider {
         kotlinOptions.freeCompilerArgs
     }
-
-    override val kotlinOptions: KotlinCommonOptions by lazy { NativeCompileOptions() }
 
     override fun kotlinOptions(fn: KotlinCommonOptions.() -> Unit) {
         kotlinOptions.fn()
@@ -505,23 +482,27 @@ open class KotlinNativeLink : AbstractKotlinNativeCompile<KotlinCommonToolOption
         binary.outputDirectory = destinationDir
     }
 
+    @get:Input
     override val outputKind: CompilerOutputKind
-        @Input get() = binary.outputKind.compilerOutputKind
+        get() = binary.outputKind.compilerOutputKind
 
+    @get:Input
     override val optimized: Boolean
-        @Input get() = binary.optimized
+        get() = binary.optimized
 
+    @get:Input
     override val debuggable: Boolean
-        @Input get() = binary.debuggable
+        get() = binary.debuggable
 
+    @get:Internal
     override val baseName: String
-        @Input get() = binary.baseName
+        get() = binary.baseName
 
     @get:Input
     protected val konanCacheKind: NativeCacheKind
         get() = project.konanCacheKind
 
-    inner class NativeLinkOptions : KotlinCommonToolOptions {
+    inner class NativeLinkOptions: KotlinCommonToolOptions {
         override var allWarningsAsErrors: Boolean = false
         override var suppressWarnings: Boolean = false
         override var verbose: Boolean = false
@@ -569,19 +550,22 @@ open class KotlinNativeLink : AbstractKotlinNativeCompile<KotlinCommonToolOption
     // endregion.
 
     // Binary-specific options.
+    @get:Optional
+    @get:Input
     val entryPoint: String?
-        @Input
-        @Optional
         get() = (binary as? Executable)?.entryPoint
 
+    @get:Input
     val linkerOpts: List<String>
-        @Input get() = binary.linkerOpts
+        get() = binary.linkerOpts
 
+    @get:Input
     val processTests: Boolean
-        @Input get() = binary is TestExecutable
+        get() = binary is TestExecutable
 
+    @get:InputFiles
     val exportLibraries: FileCollection
-    @InputFile get() = binary.let {
+        get() = binary.let {
             if (it is AbstractNativeLibrary) {
                 project.configurations.getByName(it.exportConfigurationName)
             } else {
