@@ -32,3 +32,13 @@ import kotlin.internal.RequireKotlinVersionKind
 @RequireKotlin("1.2.40", versionKind = RequireKotlinVersionKind.COMPILER_VERSION)
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY)
 annotation class JvmDefault
+
+/**
+ * Used only with `-Xjvm-default=compatibility|all-compatibility`.
+ * Specifies that compiler shouldn't generate or warn about binary compatible declarations in classes or interfaces.
+ * That could be used for classes or interface out of library public ABI or new classes and interfaces that don't require such compatibility.
+ */
+@SinceKotlin("1.4")
+@RequireKotlin("1.4", versionKind = RequireKotlinVersionKind.COMPILER_VERSION)
+@Target(AnnotationTarget.CLASS)
+annotation class JvmDefaultWithoutCompatibility
