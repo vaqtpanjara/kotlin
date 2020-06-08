@@ -45,7 +45,7 @@ fun KtDeclaration.expectedDeclaration(): KtDeclaration? = expectedDeclarations()
 
 fun DeclarationDescriptor.actualDescriptors(): Collection<DeclarationDescriptor> = when (this) {
     is MemberDescriptor -> {
-        (module.implementingDescriptors + module).flatMap { it.actualsFor(this) }
+        (module.implementingDescriptors + module).flatMap { findAnyActualForExpected(module) }
     }
     is ValueParameterDescriptor -> {
         containingDeclaration.actualDescriptors().mapNotNull { (it as? CallableDescriptor)?.valueParameters?.getOrNull(index) }
