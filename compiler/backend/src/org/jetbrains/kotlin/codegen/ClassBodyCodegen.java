@@ -22,7 +22,9 @@ import org.jetbrains.kotlin.psi.synthetics.SyntheticClassOrObjectDescriptorKt;
 import org.jetbrains.kotlin.resolve.BindingContext;
 import org.jetbrains.kotlin.resolve.DescriptorUtils;
 import org.jetbrains.kotlin.resolve.InlineClassesUtilsKt;
+import org.jetbrains.kotlin.resolve.descriptorUtil.DescriptorUtilsKt;
 import org.jetbrains.kotlin.resolve.jvm.annotations.JvmAnnotationUtilKt;
+import org.jetbrains.kotlin.resolve.jvm.diagnostics.ErrorsJvm;
 import org.jetbrains.kotlin.resolve.jvm.diagnostics.JvmDeclarationOrigin;
 import org.jetbrains.kotlin.resolve.jvm.jvmSignature.JvmMethodSignature;
 import org.jetbrains.kotlin.resolve.scopes.DescriptorKindFilter;
@@ -224,7 +226,7 @@ public abstract class ClassBodyCodegen extends MemberCodegen<KtPureClassOrObject
         JvmKotlinType receiverType = new JvmKotlinType(typeMapper.mapType(descriptor), descriptor.getDefaultType());
 
         for (Map.Entry<FunctionDescriptor, FunctionDescriptor> entry : CodegenUtil.getNonPrivateTraitMethods(descriptor).entrySet()) {
-            generateDelegationToDefaultImpl(entry.getKey(), entry.getValue(), receiverType, functionCodegen, state, isErasedInlineClass);
+            generateDelegationToDefaultImpl(entry.getKey(), entry.getValue(), receiverType, functionCodegen, state, isErasedInlineClass, myClass);
         }
     }
 
@@ -234,21 +236,42 @@ public abstract class ClassBodyCodegen extends MemberCodegen<KtPureClassOrObject
             @NotNull JvmKotlinType receiverType,
             @NotNull FunctionCodegen functionCodegen,
             @NotNull GenerationState state,
-            boolean isErasedInlineClass
+            boolean isErasedInlineClass,
+            @Nullable KtPureClassOrObject myClass
     ) {
         // Skip Java 8 default methods
         if (CodegenUtilKt.isDefinitelyNotDefaultImplsMethod(interfaceFun)) {
             return;
         }
 
+        KotlinTypeMapper typeMapper = state.getTypeMapper();
+
         CallableMemberDescriptor actualImplementation =
                 interfaceFun.getKind().isReal() ? interfaceFun : ImplKt.findImplementationFromInterface(interfaceFun);
         assert actualImplementation != null : "Can't find actual implementation for " + interfaceFun;
         if (JvmAnnotationUtilKt.isCallableMemberCompiledToJvmDefault(actualImplementation, state.getJvmDefaultMode())) {
+            DeclarationDescriptor declaration = inheritedFun.getContainingDeclaration();
+            if (myClass == null ||
+                !state.getJvmDefaultMode().isCompatibility() ||
+                !(declaration instanceof ClassDescriptor) ||
+                JvmAnnotationUtilKt.hasJvmDefaultNoCompatibilityAnnotation(declaration)) {
+                return;
+            }
+            ClassDescriptor classDescriptor = (ClassDescriptor) declaration;
+            Modality modality = classDescriptor.getModality();
+            if ((modality != Modality.OPEN && modality != Modality.ABSTRACT) || DescriptorUtilsKt.isEffectivelyPrivateApi(classDescriptor)) return;
+
+            Method inheritedSignature = typeMapper.mapSignatureSkipGeneric(inheritedFun).getAsmMethod();
+            Method actualSignature = typeMapper.mapSignatureSkipGeneric((FunctionDescriptor) actualImplementation.getOriginal()).getAsmMethod();
+            //TODO: is it any cases with JvmName?
+            if (!inheritedSignature.getDescriptor().equals(actualSignature.getDescriptor())) {
+                //NB: this diagnostics should be a bit tuned, see kt14243_2.kt for details
+                state.getDiagnostics().report(ErrorsJvm.EXPLICIT_OVERRIDE_REQUIRED_IN_COMPATIBILITY_MODE
+                                                      .on(myClass.getPsiOrParent(), inheritedFun, actualImplementation));
+            }
             return;
         }
 
-        KotlinTypeMapper typeMapper = state.getTypeMapper();
         functionCodegen.generateMethod(
                 new JvmDeclarationOrigin(
                         CLASS_MEMBER_DELEGATION_TO_DEFAULT_IMPL, descriptorToDeclaration(interfaceFun), interfaceFun, null

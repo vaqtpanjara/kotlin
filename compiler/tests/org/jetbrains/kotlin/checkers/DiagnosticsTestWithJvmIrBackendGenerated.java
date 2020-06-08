@@ -568,4 +568,35 @@ public class DiagnosticsTestWithJvmIrBackendGenerated extends AbstractDiagnostic
             }
         }
     }
+
+    @TestMetadata("compiler/testData/diagnostics/testsWithJvmBackend/jvmDefaults")
+    @TestDataPath("$PROJECT_ROOT")
+    @RunWith(JUnit3RunnerWithInners.class)
+    public static class JvmDefaults extends AbstractDiagnosticsTestWithJvmIrBackend {
+        private void runTest(String testDataFilePath) throws Exception {
+            KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
+        }
+
+        public void testAllFilesPresentInJvmDefaults() throws Exception {
+            KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/testsWithJvmBackend/jvmDefaults"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+        }
+
+        @TestMetadata("compiler/testData/diagnostics/testsWithJvmBackend/jvmDefaults/allCompatibility")
+        @TestDataPath("$PROJECT_ROOT")
+        @RunWith(JUnit3RunnerWithInners.class)
+        public static class AllCompatibility extends AbstractDiagnosticsTestWithJvmIrBackend {
+            private void runTest(String testDataFilePath) throws Exception {
+                KotlinTestUtils.runTest(this::doTest, TargetBackend.JVM_IR, testDataFilePath);
+            }
+
+            public void testAllFilesPresentInAllCompatibility() throws Exception {
+                KotlinTestUtils.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("compiler/testData/diagnostics/testsWithJvmBackend/jvmDefaults/allCompatibility"), Pattern.compile("^(.+)\\.kt$"), null, TargetBackend.JVM_IR, true);
+            }
+
+            @TestMetadata("specialization.kt")
+            public void testSpecialization() throws Exception {
+                runTest("compiler/testData/diagnostics/testsWithJvmBackend/jvmDefaults/allCompatibility/specialization.kt");
+            }
+        }
+    }
 }

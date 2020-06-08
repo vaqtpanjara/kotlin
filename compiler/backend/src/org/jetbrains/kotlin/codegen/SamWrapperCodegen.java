@@ -275,7 +275,9 @@ public class SamWrapperCodegen {
             for (Map.Entry<FunctionDescriptor, FunctionDescriptor> entry : CodegenUtil.INSTANCE.copyFunctions(
                     member, member, classDescriptor, Modality.OPEN, Visibilities.PUBLIC, CallableMemberDescriptor.Kind.DECLARATION, false
             ).entrySet()) {
-                ClassBodyCodegen.generateDelegationToDefaultImpl(entry.getKey(), entry.getValue(), receiverType, functionCodegen, state, false);
+                ClassBodyCodegen
+                        .generateDelegationToDefaultImpl(entry.getKey(), entry.getValue(), receiverType, functionCodegen, state, false,
+                                                         null);
             }
         }
     }
