@@ -1,0 +1,7 @@
+Pattern, Status (include or exclude)
+**/KmmCompatibilityCheckerUnitTests*, include
+**/GradleMultiplatformHighlightingTest*, include
+**/NewMultiplatformKaptProjectImportingTest*, include
+**/MultiplatformProjectImportingTest*, include
+**/HierarchicalMultiplatformProjectImportingTest*, include
+**/MultiplatformAnalysisTest*, include

@@ -807,6 +807,63 @@ tasks {
         }
     }
 
+    register("kmmTest") {
+        val testTasks = File("tests/mpp/test-tasks.csv")
+            .readLines()
+            .map { if (it.startsWith(":")) getByPath(it) else getByName(it) }
+        val taskWithDependencies = testTasks.flatMap { it.taskDependencies.getDependencies(it) }.union(testTasks)
+
+        taskWithDependencies.filter { it !is Test }.forEach {
+            dependsOn(it.toString().split("'")[1])
+        }
+
+        doLast {
+            val patterns = File("tests/mpp/kmm-tests.csv")
+                .readLines()
+                .asSequence()
+                .map { it.trim().split(',') }
+                .filter { it.isNotEmpty() }
+                .drop(1)
+                .groupBy({ it[1].trim() }, { it[0].trim() })
+            val executeTest = { testTask: Test ->
+                patterns["exclude"]?.let { testTask.exclude(it) }
+                patterns["include"]?.let { testTask.include(it) }
+                testTask.filter { isFailOnNoMatchingTests = false }
+                testTask.testLogging {
+                    // set options for log level LIFECYCLE
+                    events("passed", "skipped", "failed")
+                }
+                testTask.addTestListener(object : TestListener {
+                    override fun afterSuite(desc: TestDescriptor, result: TestResult) {
+                        if (desc.parent == null) { // will match the outermost suite
+                            val output =
+                                "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)"
+                            val startItem = "|  "
+                            val endItem = "  |"
+                            val repeatLength = startItem.length + output.length + endItem.length
+                            println(
+                                "\n" + ("-".repeat(repeatLength)) + "\n" + startItem + output + endItem + "\n" + ("-".repeat(
+                                    repeatLength
+                                ))
+                            )
+                        }
+                    }
+
+                    override fun beforeSuite(suite: TestDescriptor) {}
+                    override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {}
+                    override fun beforeTest(testDescriptor: TestDescriptor) {}
+                })
+                testTask.maxParallelForks =
+                    Math.max(Runtime.getRuntime().availableProcessors() / if (kotlinBuildProperties.isTeamcityBuild) 2 else 4, 1)
+                println("Execute: $testTask")
+                testTask.executeTests()
+            }
+            taskWithDependencies.filterIsInstance<Test>().forEach {
+                executeTest(it)
+            }
+        }
+    }
+
     register("test") {
         doLast {
             throw GradleException("Don't use directly, use aggregate tasks *-check instead")
