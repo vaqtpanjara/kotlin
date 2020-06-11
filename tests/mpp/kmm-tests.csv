@@ -3,5 +3,13 @@ Pattern, Status (include or exclude)
 **/GradleMultiplatformHighlightingTest*, include
 **/NewMultiplatformKaptProjectImportingTest*, include
 **/MultiplatformProjectImportingTest*, include
+**/DiagnosticsTestGenerated*, include
+**/DiagnosticsTestWithStdLibGenerated*, include
 **/HierarchicalMultiplatformProjectImportingTest*, include
 **/MultiplatformAnalysisTest*, include
+**/MultiPlatformIntegrationTestGenerated*, include
+**/LightAnalysisModeTestGenerated$Multiplatform*, include
+**/IrJsCodegenBoxTestGenerated$Multiplatform*, include
+**/IrJsCodegenBoxES6TestGenerated$Multiplatform*, include
+**/QuickFixMultiModuleTestGenerated*, include
+**/HierarchicalExpectActualTestGenerated*, include

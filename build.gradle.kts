@@ -810,14 +810,18 @@ tasks {
     register("kmmTest") {
         val testTasks = File("tests/mpp/test-tasks.csv")
             .readLines()
-            .map { if (it.startsWith(":")) getByPath(it) else getByName(it) }
+            .mapNotNull { if (it.startsWith(":")) findByPath(it) else findByName(it) }
         val taskWithDependencies = testTasks.flatMap { it.taskDependencies.getDependencies(it) }.union(testTasks)
 
         taskWithDependencies.filter { it !is Test }.forEach {
             dependsOn(it.toString().split("'")[1])
         }
+        var testCount = 0L
+        var successfulTestCount = 0L
+        var failedTestCount = 0L
+        var skippedTestCount = 0L
 
-        doLast {
+        doFirst {
             val patterns = File("tests/mpp/kmm-tests.csv")
                 .readLines()
                 .asSequence()
@@ -830,22 +834,15 @@ tasks {
                 patterns["include"]?.let { testTask.include(it) }
                 testTask.filter { isFailOnNoMatchingTests = false }
                 testTask.testLogging {
-                    // set options for log level LIFECYCLE
                     events("passed", "skipped", "failed")
                 }
                 testTask.addTestListener(object : TestListener {
                     override fun afterSuite(desc: TestDescriptor, result: TestResult) {
                         if (desc.parent == null) { // will match the outermost suite
-                            val output =
-                                "Results: ${result.resultType} (${result.testCount} tests, ${result.successfulTestCount} successes, ${result.failedTestCount} failures, ${result.skippedTestCount} skipped)"
-                            val startItem = "|  "
-                            val endItem = "  |"
-                            val repeatLength = startItem.length + output.length + endItem.length
-                            println(
-                                "\n" + ("-".repeat(repeatLength)) + "\n" + startItem + output + endItem + "\n" + ("-".repeat(
-                                    repeatLength
-                                ))
-                            )
+                            testCount += result.testCount
+                            successfulTestCount += result.successfulTestCount
+                            failedTestCount += result.failedTestCount
+                            skippedTestCount += result.skippedTestCount
                         }
                     }
 
@@ -856,11 +853,28 @@ tasks {
                 testTask.maxParallelForks =
                     Math.max(Runtime.getRuntime().availableProcessors() / if (kotlinBuildProperties.isTeamcityBuild) 2 else 4, 1)
                 println("Execute: $testTask")
-                testTask.executeTests()
+                try {
+                    testTask.executeTests()
+                } catch (ex: GradleException) {
+                }
             }
             taskWithDependencies.filterIsInstance<Test>().forEach {
                 executeTest(it)
             }
+        }
+
+        doLast {
+            val resultType = if (failedTestCount > 0) TestResult.ResultType.FAILURE else TestResult.ResultType.SUCCESS
+            val output =
+                "Results: $resultType ($testCount tests, $successfulTestCount successes, $failedTestCount failures, $skippedTestCount skipped)"
+            val startItem = "|  "
+            val endItem = "  |"
+            val repeatLength = startItem.length + output.length + endItem.length
+            println(
+                "\n" + ("-".repeat(repeatLength)) + "\n" + startItem + output + endItem + "\n" + ("-".repeat(
+                    repeatLength
+                ))
+            )
         }
     }
 
