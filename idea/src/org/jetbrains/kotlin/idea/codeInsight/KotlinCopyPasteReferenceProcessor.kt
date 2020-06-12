@@ -48,6 +48,7 @@ import org.jetbrains.kotlin.idea.util.getSourceRoot
 import org.jetbrains.kotlin.incremental.components.NoLookupLocation
 import org.jetbrains.kotlin.kdoc.psi.api.KDocElement
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.parsing.KotlinParserDefinition.Companion.STD_SCRIPT_EXT
 import org.jetbrains.kotlin.psi.*
 import org.jetbrains.kotlin.psi.psiUtil.*
 import org.jetbrains.kotlin.resolve.BindingContext
@@ -428,13 +429,25 @@ class KotlinCopyPasteReferenceProcessor : CopyPastePostProcessor<BasicKotlinRefe
              
             """.trimIndent()
 
+        val sourceFileUrl = transferableData.sourceFileUrl
+        val script = sourceFileUrl.endsWith(STD_SCRIPT_EXT)
+        val extension = if (script) STD_SCRIPT_EXT else ".kt"
+
         val dummyOriginalFile = runReadAction {
             KtPsiFactory(project)
                 .createAnalyzableFile(
-                    "dummy-original.kt",
+                    "dummy-original$extension",
                     "$dummyOrigFileProlog${transferableData.sourceText}",
                     ctxFile
                 )
+        }
+
+        if (script) {
+            val originalFile = runReadAction {
+                val virtualFile = VirtualFileManager.getInstance().findFileByUrl(sourceFileUrl) ?: return@runReadAction null
+                PsiManager.getInstance(project).findFile(virtualFile)
+            } ?: return emptyList()
+            dummyOriginalFile.originalFile = originalFile
         }
 
         val offsetDelta = dummyOrigFileProlog.length - transferableData.sourceTextOffset
@@ -476,7 +489,7 @@ class KotlinCopyPasteReferenceProcessor : CopyPastePostProcessor<BasicKotlinRefe
         // - those source package imports those are not present in a fake package
         // - all rest imports
 
-        val sourceImportPrefix = "import $sourcePkgName"
+        val sourceImportPrefix = "import ${if (sourcePkgName.isEmpty()) fakePkgName else sourcePkgName}"
         val fakeImportPrefix = "import $fakePkgName"
 
         val affectedSourcePkgImports = imports.filter { it.startsWith(sourceImportPrefix) }
@@ -511,7 +524,7 @@ class KotlinCopyPasteReferenceProcessor : CopyPastePostProcessor<BasicKotlinRefe
 
         return """
             ${joinLines(dummyFileImports)}
-            import ${sourcePkgName}.*
+            ${if (sourcePkgName.isNotEmpty()) "import ${sourcePkgName}.*" else ""}
             ${joinLines(filteredImports)}
         """
     }
