@@ -26,10 +26,7 @@ import org.jetbrains.kotlin.ir.builders.irBlockBody
 import org.jetbrains.kotlin.ir.builders.irCall
 import org.jetbrains.kotlin.ir.builders.irGet
 import org.jetbrains.kotlin.ir.builders.irReturn
-import org.jetbrains.kotlin.ir.declarations.IrClass
-import org.jetbrains.kotlin.ir.declarations.IrDeclarationOrigin
-import org.jetbrains.kotlin.ir.declarations.IrFile
-import org.jetbrains.kotlin.ir.declarations.IrSimpleFunction
+import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.expressions.IrCall
 import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrTypeOperator
@@ -39,6 +36,8 @@ import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.ir.visitors.IrElementVisitorVoid
 import org.jetbrains.kotlin.ir.visitors.acceptChildrenVoid
 import org.jetbrains.kotlin.ir.visitors.transformChildrenVoid
+import org.jetbrains.kotlin.resolve.descriptorUtil.isEffectivelyPrivateApi
+import org.jetbrains.kotlin.resolve.jvm.diagnostics.ErrorsJvm.EXPLICIT_OVERRIDE_REQUIRED_IN_COMPATIBILITY_MODE
 import org.jetbrains.kotlin.utils.addToStdlib.safeAs
 
 internal val inheritedDefaultMethodsOnClassesPhase = makeIrFilePhase(
@@ -62,9 +61,25 @@ private class InheritedDefaultMethodsOnClassesLowering(val context: JvmBackendCo
 
     private fun generateInterfaceMethods(irClass: IrClass) {
         irClass.declarations.transform { declaration ->
-            (declaration as? IrSimpleFunction)?.findInterfaceImplementation(context.state.jvmDefaultMode)?.let { implementation ->
-                generateDelegationToDefaultImpl(implementation, declaration)
-            } ?: declaration
+            val jvmDefaultMode = context.state.jvmDefaultMode
+            (declaration as? IrSimpleFunction)?.findInterfaceImplementation(jvmDefaultMode, checkJvmDefault = false)
+                ?.let { implementation ->
+                    if (implementation.isCompiledToJvmDefault(jvmDefaultMode)) {
+                        if (!jvmDefaultMode.isCompatibility || irClass.hasJvmDefaultNoCompatibilityAnnotation()) return@let null
+
+                        val modality = irClass.modality
+                        if (modality !== Modality.OPEN && modality !== Modality.ABSTRACT || irClass.isEnumClass || irClass.descriptor.isEffectivelyPrivateApi) return@let null
+
+                        val inheritedSignature = context.methodSignatureMapper.mapSignatureSkipGeneric(declaration).asmMethod
+                        val actualSignature = context.methodSignatureMapper.mapSignatureSkipGeneric(implementation).asmMethod
+                        if (inheritedSignature.descriptor != actualSignature.descriptor) {
+                            context.psiErrorBuilder
+                                .at(declaration as IrDeclaration)
+                                .report(EXPLICIT_OVERRIDE_REQUIRED_IN_COMPATIBILITY_MODE, declaration.descriptor, implementation.descriptor)
+                        }
+                        null
+                    } else generateDelegationToDefaultImpl(implementation, declaration)
+                } ?: declaration
         }
     }
 
@@ -173,11 +188,12 @@ private class InterfaceDefaultCallsLowering(val context: JvmBackendContext) : Ir
 
 internal fun IrSimpleFunction.isDefinitelyNotDefaultImplsMethod(
     jvmDefaultMode: JvmDefaultMode,
-    implementation: IrSimpleFunction? = resolveFakeOverride()
+    implementation: IrSimpleFunction? = resolveFakeOverride(),
+    checkJvmDefault: Boolean = true
 ): Boolean =
     implementation == null ||
             implementation.origin == IrDeclarationOrigin.IR_EXTERNAL_JAVA_DECLARATION_STUB ||
-            implementation.isCompiledToJvmDefault(jvmDefaultMode) ||
+            checkJvmDefault && implementation.isCompiledToJvmDefault(jvmDefaultMode) ||
             origin == IrDeclarationOrigin.FUNCTION_FOR_DEFAULT_PARAMETER ||
             hasAnnotation(PLATFORM_DEPENDENT_ANNOTATION_FQ_NAME) ||
             isCloneableClone()
@@ -231,7 +247,10 @@ private fun isDefaultImplsBridge(f: IrSimpleFunction) =
         f.origin == JvmLoweredDeclarationOrigin.DEFAULT_IMPLS_BRIDGE ||
         f.origin == JvmLoweredDeclarationOrigin.DEFAULT_IMPLS_BRIDGE_TO_SYNTHETIC
 
-internal fun IrSimpleFunction.findInterfaceImplementation(jvmDefaultMode: JvmDefaultMode): IrSimpleFunction? {
+internal fun IrSimpleFunction.findInterfaceImplementation(
+    jvmDefaultMode: JvmDefaultMode,
+    checkJvmDefault: Boolean = true
+): IrSimpleFunction? {
     if (!isFakeOverride) return null
     parent.let { if (it is IrClass && it.isJvmInterface) return null }
 
@@ -249,7 +268,7 @@ internal fun IrSimpleFunction.findInterfaceImplementation(jvmDefaultMode: JvmDef
 
     if (!implementation.hasInterfaceParent()
         || Visibilities.isPrivate(implementation.visibility)
-        || implementation.isDefinitelyNotDefaultImplsMethod(jvmDefaultMode)
+        || implementation.isDefinitelyNotDefaultImplsMethod(jvmDefaultMode, checkJvmDefault = checkJvmDefault)
         || implementation.isMethodOfAny()
     ) {
         return null
