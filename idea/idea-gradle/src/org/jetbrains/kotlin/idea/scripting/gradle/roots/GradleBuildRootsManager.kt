@@ -419,7 +419,7 @@ class GradleBuildRootsManager(val project: Project) : GradleBuildRootsLocator(),
                     if (ktFile != null) DaemonCodeAnalyzer.getInstance(project).restart(ktFile)
                 }
 
-                EditorNotifications.getInstance(project).updateAllNotifications()
+                EditorNotifications.getInstance(project).updateNotifications(it)
             }
         }
     }
