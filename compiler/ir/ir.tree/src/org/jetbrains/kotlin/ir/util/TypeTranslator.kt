@@ -32,7 +32,8 @@ class TypeTranslator(
     val languageVersionSettings: LanguageVersionSettings,
     builtIns: KotlinBuiltIns,
     private val typeParametersResolver: TypeParametersResolver = ScopedTypeParametersResolver(),
-    private val enterTableScope: Boolean = false
+    private val enterTableScope: Boolean = false,
+    private val extensions: StubGeneratorExtensions = StubGeneratorExtensions.EMPTY
 ) {
 
     private val erasureStack = Stack<PropertyDescriptor>()
@@ -84,9 +85,9 @@ class TypeTranslator(
 
         when {
             flexibleApproximatedType.isError ->
-                return IrErrorTypeImpl(flexibleApproximatedType, translateTypeAnnotations(flexibleApproximatedType.annotations), variance)
+                return IrErrorTypeImpl(flexibleApproximatedType, translateTypeAnnotations(flexibleApproximatedType), variance)
             flexibleApproximatedType.isDynamic() ->
-                return IrDynamicTypeImpl(flexibleApproximatedType, translateTypeAnnotations(flexibleApproximatedType.annotations), variance)
+                return IrDynamicTypeImpl(flexibleApproximatedType, translateTypeAnnotations(flexibleApproximatedType), variance)
         }
 
         val approximatedType = flexibleApproximatedType.upperIfFlexible()
@@ -108,19 +109,19 @@ class TypeTranslator(
 
         return IrSimpleTypeBuilder().apply {
             this.kotlinType = flexibleApproximatedType
-            this.hasQuestionMark = approximatedType.isMarkedNullable
+            this.hasQuestionMark = approximatedType.isMarkedNullable || extensions.enhancedNullability.hasEnhancedNullability(approximatedType)
             this.variance = variance
             this.abbreviation = approximatedType.getAbbreviation()?.toIrTypeAbbreviation()
             when (ktTypeDescriptor) {
                 is TypeParameterDescriptor -> {
                     classifier = resolveTypeParameter(ktTypeDescriptor)
-                    annotations = translateTypeAnnotations(approximatedType.annotations)
+                    annotations = translateTypeAnnotations(approximatedType)
                 }
 
                 is ClassDescriptor -> {
                     classifier = symbolTable.referenceClass(ktTypeDescriptor)
                     arguments = translateTypeArguments(approximatedType.arguments)
-                    annotations = translateTypeAnnotations(approximatedType.annotations)
+                    annotations = translateTypeAnnotations(approximatedType)
                 }
 
                 else ->
@@ -143,7 +144,7 @@ class TypeTranslator(
             symbolTable.referenceTypeAlias(typeAliasDescriptor),
             isMarkedNullable,
             translateTypeArguments(this.arguments),
-            translateTypeAnnotations(this.annotations)
+            translateTypeAnnotations(this)
         )
     }
 
@@ -183,8 +184,11 @@ class TypeTranslator(
                 approximateCapturedTypes(ktType).upper
         }
 
-    private fun translateTypeAnnotations(annotations: Annotations): List<IrConstructorCall> =
-        annotations.mapNotNull(constantValueGenerator::generateAnnotationConstructorCall)
+    private fun translateTypeAnnotations(type: KotlinType): List<IrConstructorCall> {
+        val result = mutableListOf<IrConstructorCall>()
+        type.annotations.mapNotNullTo(result, constantValueGenerator::generateAnnotationConstructorCall)
+        return result
+    }
 
     private fun translateTypeArguments(arguments: List<TypeProjection>) =
         arguments.map {
