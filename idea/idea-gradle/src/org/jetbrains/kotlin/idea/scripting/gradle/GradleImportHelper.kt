@@ -32,30 +32,28 @@ import org.jetbrains.plugins.gradle.util.GradleConstants
 val scriptConfigurationsNeedToBeUpdatedBalloon
     get() = Registry.`is`("kotlin.gradle.scripts.scriptConfigurationsNeedToBeUpdatedBalloon", false)
 
-fun runPartialGradleImport(project: Project) {
-    val isImportAlreadyInProgress = GradleBuildRootsManager.getInstance(project).getAllRoots().any {
-        it.importing.get() == GradleBuildRoot.ImportingStatus.importing
+fun runPartialGradleImportForAllRoots(project: Project) {
+    GradleBuildRootsManager.getInstance(project).getAllRoots().forEach { root ->
+        runPartialGradleImport(project, root)
     }
-    if (isImportAlreadyInProgress) return
+}
 
-    getGradleProjectSettings(project).forEach {
-        ExternalSystemUtil.refreshProject(
-            it.externalProjectPath,
-            ImportSpecBuilder(project, GradleConstants.SYSTEM_ID)
-                .build()
-        )
-    }
+fun runPartialGradleImport(project: Project, root: GradleBuildRoot) {
+    if (root.importing.get() == GradleBuildRoot.ImportingStatus.importing) return
+
+    ExternalSystemUtil.refreshProject(
+        root.pathPrefix,
+        ImportSpecBuilder(project, GradleConstants.SYSTEM_ID)
+            .build()
+    )
 }
 
 fun getMissingConfigurationActionText() = KotlinIdeaGradleBundle.message("action.label.import.project")
 
-fun autoReloadScriptConfigurations(project: Project, file: VirtualFile): Boolean {
-    val path = GradleBuildRootsManager.getInstance(project)
-        .getScriptInfo(file)?.buildRoot?.pathPrefix ?: return false
-
+fun autoReloadScriptConfigurations(project: Project, root: GradleBuildRoot): Boolean {
     return ExternalSystemApiUtil
         .getSettings(project, GradleConstants.SYSTEM_ID)
-        .getLinkedProjectSettings(path)
+        .getLinkedProjectSettings(root.pathPrefix)
         ?.isUseAutoImport ?: false
 }
 
@@ -66,7 +64,8 @@ private var Project.notificationPanel: ScriptConfigurationChangedNotification?
 fun scriptConfigurationsNeedToBeUpdated(project: Project, file: VirtualFile) {
     if (!scriptConfigurationsNeedToBeUpdatedBalloon) return
 
-    if (autoReloadScriptConfigurations(project, file)) {
+    val root = GradleBuildRootsManager.getInstance(project).getScriptInfo(file)?.buildRoot ?: return
+    if (autoReloadScriptConfigurations(project, root)) {
         // import should be run automatically by Gradle plugin
         return
     }
@@ -108,10 +107,13 @@ private class ScriptConfigurationChangedNotification(val project: Project) :
     init {
         addAction(LoadConfigurationAction())
         addAction(NotificationAction.createSimple(KotlinIdeaGradleBundle.message("action.label.enable.auto.import")) {
-            getGradleProjectSettings(project).forEach {
-                it.isUseAutoImport = true
+            GradleBuildRootsManager.getInstance(project).getAllRoots().forEach { root ->
+                val projectSettings = getGradleProjectSettings(project).find { it.externalProjectPath == root.pathPrefix }
+                if (projectSettings != null) {
+                    projectSettings.isUseAutoImport = true
+                }
+                runPartialGradleImport(project, root)
             }
-            runPartialGradleImport(project)
         })
     }
 
@@ -124,7 +126,9 @@ private class ScriptConfigurationChangedNotification(val project: Project) :
     private class LoadConfigurationAction : AnAction(KotlinIdeaGradleBundle.message("action.label.import.project")) {
         override fun actionPerformed(e: AnActionEvent) {
             val project = e.project ?: return
-            runPartialGradleImport(project)
+            GradleBuildRootsManager.getInstance(project).getAllRoots().forEach { root ->
+                runPartialGradleImport(project, root)
+            }
         }
     }
 }
