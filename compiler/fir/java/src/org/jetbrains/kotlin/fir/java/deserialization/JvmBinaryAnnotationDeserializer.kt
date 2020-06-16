@@ -17,8 +17,10 @@ import org.jetbrains.kotlin.load.kotlin.KotlinJvmBinarySourceElement
 import org.jetbrains.kotlin.load.kotlin.MemberSignature
 import org.jetbrains.kotlin.metadata.ProtoBuf
 import org.jetbrains.kotlin.metadata.deserialization.NameResolver
+import org.jetbrains.kotlin.metadata.deserialization.TypeTable
 import org.jetbrains.kotlin.metadata.deserialization.getExtensionOrNull
 import org.jetbrains.kotlin.metadata.jvm.JvmProtoBuf
+import org.jetbrains.kotlin.metadata.jvm.deserialization.JvmProtoBufUtil
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.serialization.deserialization.descriptors.DeserializedContainerSource
@@ -39,6 +41,30 @@ class JvmBinaryAnnotationDeserializer(
     override fun loadTypeAnnotations(typeProto: ProtoBuf.Type, nameResolver: NameResolver): List<FirAnnotationCall> {
         val annotations = typeProto.getExtension(JvmProtoBuf.typeAnnotation).orEmpty()
         return annotations.map { deserializeAnnotation(it, nameResolver) }
+    }
+
+    override fun loadFunctionAnnotations(
+        functionProto: ProtoBuf.Function,
+        nameResolver: NameResolver,
+        typeTable: TypeTable,
+        containerSource: DeserializedContainerSource?,
+    ): List<FirAnnotationCall> {
+        val signature = MemberSignature.fromJvmMemberSignature(
+            JvmProtoBufUtil.getJvmMethodSignature(functionProto, nameResolver, typeTable) ?: return emptyList()
+        )
+        return loadMemberAnnotationsBySignature(containerSource, signature)
+    }
+
+    override fun loadConstructorAnnotations(
+        constructorProto: ProtoBuf.Constructor,
+        nameResolver: NameResolver,
+        typeTable: TypeTable,
+        containerSource: DeserializedContainerSource?
+    ): List<FirAnnotationCall> {
+        val signature = MemberSignature.fromJvmMemberSignature(
+            JvmProtoBufUtil.getJvmConstructorSignature(constructorProto, nameResolver, typeTable) ?: return emptyList()
+        )
+        return loadMemberAnnotationsBySignature(containerSource, signature)
     }
 
     override fun loadPropertyGetterAnnotations(

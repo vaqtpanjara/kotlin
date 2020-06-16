@@ -10,7 +10,9 @@ import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.declarations.builder.*
-import org.jetbrains.kotlin.fir.declarations.impl.*
+import org.jetbrains.kotlin.fir.declarations.impl.FirDeclarationStatusImpl
+import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertyGetter
+import org.jetbrains.kotlin.fir.declarations.impl.FirDefaultPropertySetter
 import org.jetbrains.kotlin.fir.expressions.FirExpression
 import org.jetbrains.kotlin.fir.expressions.builder.buildExpressionStub
 import org.jetbrains.kotlin.fir.symbols.CallableId
@@ -316,7 +318,12 @@ class FirMemberDeserializer(private val c: FirDeserializationContext) {
             resolvePhase = FirResolvePhase.ANALYZED_DEPENDENCIES
             typeParameters += local.typeDeserializer.ownTypeParameters.map { it.fir }
             valueParameters += local.memberDeserializer.valueParameters(proto.valueParameterList)
-            annotations += local.annotationDeserializer.loadFunctionAnnotations(proto, local.nameResolver)
+            annotations += local.annotationDeserializer.loadFunctionAnnotations(
+                proto,
+                local.nameResolver,
+                local.typeTable,
+                c.containerSource
+            )
             this.containerSource = c.containerSource
         }
         if (proto.hasContract()) {
@@ -366,7 +373,12 @@ class FirMemberDeserializer(private val c: FirDeserializationContext) {
             valueParameters += local.memberDeserializer.valueParameters(
                 proto.valueParameterList, addDefaultValue = classBuilder.symbol.classId == StandardClassIds.Enum
             )
-            annotations += local.annotationDeserializer.loadConstructorAnnotations(proto, local.nameResolver)
+            annotations += local.annotationDeserializer.loadConstructorAnnotations(
+                proto,
+                local.nameResolver,
+                local.typeTable,
+                c.containerSource
+            )
         }.build()
     }
 
