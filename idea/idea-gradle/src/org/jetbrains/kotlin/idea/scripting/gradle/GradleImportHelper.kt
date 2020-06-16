@@ -21,6 +21,7 @@ import com.intellij.openapi.vfs.VirtualFile
 import org.gradle.util.GradleVersion
 import org.jetbrains.kotlin.idea.KotlinIcons
 import org.jetbrains.kotlin.idea.KotlinIdeaGradleBundle
+import org.jetbrains.kotlin.idea.scripting.gradle.roots.GradleBuildRoot
 import org.jetbrains.kotlin.idea.scripting.gradle.roots.GradleBuildRootsManager
 import org.jetbrains.kotlin.idea.util.application.getServiceSafe
 import org.jetbrains.kotlin.psi.UserDataProperty
@@ -32,6 +33,11 @@ val scriptConfigurationsNeedToBeUpdatedBalloon
     get() = Registry.`is`("kotlin.gradle.scripts.scriptConfigurationsNeedToBeUpdatedBalloon", false)
 
 fun runPartialGradleImport(project: Project) {
+    val isImportAlreadyInProgress = GradleBuildRootsManager.getInstance(project).getAllRoots().any {
+        it.importing.get() == GradleBuildRoot.ImportingStatus.importing
+    }
+    if (isImportAlreadyInProgress) return
+
     getGradleProjectSettings(project).forEach {
         ExternalSystemUtil.refreshProject(
             it.externalProjectPath,

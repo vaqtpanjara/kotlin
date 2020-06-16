@@ -29,6 +29,11 @@ import org.jetbrains.plugins.gradle.settings.GradleProjectSettings
 import org.jetbrains.plugins.gradle.util.GradleConstants
 
 fun runPartialGradleImport(project: Project) {
+    val isImportAlreadyInProgress = GradleBuildRootsManager.getInstance(project).getAllRoots().any {
+        it.importing.get() == GradleBuildRoot.ImportingStatus.importing
+    }
+    if (isImportAlreadyInProgress) return
+
     getGradleProjectSettings(project).forEach { gradleProjectSettings ->
         ExternalSystemUtil.refreshProject(
             gradleProjectSettings.externalProjectPath,
