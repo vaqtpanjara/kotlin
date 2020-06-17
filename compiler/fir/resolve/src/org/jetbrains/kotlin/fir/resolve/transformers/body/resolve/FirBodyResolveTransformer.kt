@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.fir.resolve.transformers.body.resolve
 
 import org.jetbrains.kotlin.fir.*
+import org.jetbrains.kotlin.fir.analysis.collectors.FirDiagnosticsCollector
 import org.jetbrains.kotlin.fir.declarations.*
 import org.jetbrains.kotlin.fir.expressions.*
 import org.jetbrains.kotlin.fir.resolve.ResolutionMode
@@ -43,6 +44,8 @@ open class FirBodyResolveTransformer(
     protected open val declarationsTransformer = FirDeclarationsResolveTransformer(this)
     private val controlFlowStatementsTransformer = FirControlFlowStatementsResolveTransformer(this)
 
+    private val diagnosticCollector = FirDiagnosticsCollector.create(session)
+
     override fun transformFile(file: FirFile, data: ResolutionMode): CompositeTransformResult<FirFile> {
         checkSessionConsistency(file)
         context.cleanContextForAnonymousFunction()
@@ -50,7 +53,7 @@ open class FirBodyResolveTransformer(
         @OptIn(PrivateForInline::class)
         context.file = file
         packageFqName = file.packageFqName
-        return withScopeCleanup(context.fileImportsScope) {
+        val result = withScopeCleanup(context.fileImportsScope) {
             context.withTowerDataCleanup {
                 val importingScopes = createImportingScopes(file, session, components.scopeSession)
                 context.fileImportsScope += importingScopes
@@ -61,6 +64,11 @@ open class FirBodyResolveTransformer(
                 transformDeclarationContent(file, data) as CompositeTransformResult<FirFile>
             }
         }
+        if (transformerPhase == FirResolvePhase.BODY_RESOLVE) {
+            val file = result.single
+            diagnosticCollector.collectDiagnostics(file)
+        }
+        return result
     }
 
     override fun <E : FirElement> transformElement(element: E, data: ResolutionMode): CompositeTransformResult<E> {
