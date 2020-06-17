@@ -94,7 +94,7 @@ digraph complexPostponedCfg_kt {
     8 -> {9};
     9 -> {21};
     9 -> {11} [color=red];
-    10 -> {12};
+    10 -> {12} [color=red];
     11 -> {12} [color=green];
     12 -> {20};
     12 -> {13} [style=dotted];
