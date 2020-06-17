@@ -26,7 +26,8 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.serialization.deserialization.descriptors.DeserializedContainerSource
 
 class JvmBinaryAnnotationDeserializer(
-    val session: FirSession
+    val session: FirSession,
+    private var byteContent: ByteArray?
 ) : AbstractAnnotationDeserializer(session) {
     private val storage: MutableMap<KotlinJvmBinaryClass, MemberAnnotations> = mutableMapOf()
 
@@ -171,7 +172,9 @@ class JvmBinaryAnnotationDeserializer(
                     }
                 }
             }
-        }, null) // TODO: cached file content?
+        }, byteContent)
+
+        byteContent = null
 
         val result = MemberAnnotations(memberAnnotations)
         storage[kotlinClass] = result

@@ -278,7 +278,7 @@ class FirMemberDeserializer(private val c: FirDeserializationContext) {
         }
     }
 
-    fun loadFunction(proto: ProtoBuf.Function): FirSimpleFunction {
+    fun loadFunction(proto: ProtoBuf.Function, byteContent: ByteArray? = null): FirSimpleFunction {
         val flags = if (proto.hasFlags()) proto.flags else loadOldFlags(proto.oldFlags)
 
         val receiverAnnotations =
