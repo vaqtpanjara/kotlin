@@ -201,6 +201,6 @@ fun AbstractDiagnosticCollector.registerAllComponents() {
         DeclarationCheckersDiagnosticComponent(this),
         ExpressionCheckersDiagnosticComponent(this),
         ErrorNodeDiagnosticCollectorComponent(this),
-        ControlFlowAnalysisDiagnosticComponent(this),
+//        ControlFlowAnalysisDiagnosticComponent(this),
     )
 }
