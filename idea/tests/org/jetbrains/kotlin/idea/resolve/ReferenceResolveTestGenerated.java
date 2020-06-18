@@ -253,6 +253,11 @@ public class ReferenceResolveTestGenerated extends AbstractReferenceResolveTest 
         runTest("idea/testData/resolve/references/JavaReference.kt");
     }
 
+    @TestMetadata("LocalVariableReference.kt")
+    public void testLocalVariableReference() throws Exception {
+        runTest("idea/testData/resolve/references/LocalVariableReference.kt");
+    }
+
     @TestMetadata("MultiDeclarationExtension.kt")
     public void testMultiDeclarationExtension() throws Exception {
         runTest("idea/testData/resolve/references/MultiDeclarationExtension.kt");

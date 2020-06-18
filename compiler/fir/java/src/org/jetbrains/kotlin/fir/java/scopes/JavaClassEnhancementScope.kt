@@ -69,6 +69,10 @@ class JavaClassEnhancementScope(
         return super.processPropertiesByName(name, processor)
     }
 
+    override fun getCallableNames(): Set<Name> {
+        return useSiteMemberScope.getCallableNames() + super.getCallableNames()
+    }
+
     override fun processFunctionsByName(name: Name, processor: (FirFunctionSymbol<*>) -> Unit) {
         useSiteMemberScope.processFunctionsByName(name) process@{ original ->
 
