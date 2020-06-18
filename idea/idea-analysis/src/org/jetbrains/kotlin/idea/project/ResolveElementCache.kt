@@ -273,7 +273,7 @@ class ResolveElementCache(
     }
 
     private fun findElementOfAdditionalResolve(element: KtElement, bodyResolveMode: BodyResolveMode): KtElement? {
-        if (element is KtAnnotationEntry && bodyResolveMode == BodyResolveMode.PARTIAL_NO_ADDITIONAL)
+        if (element is KtAnnotationEntry)
             return element
 
         val elementOfAdditionalResolve = KtPsiUtil.getTopmostParentOfTypes(
@@ -500,6 +500,7 @@ class ResolveElementCache(
         val declaration = modifierList?.getParentOfType<KtDeclaration>(true)
         if (declaration != null) {
             doResolveAnnotations(getAnnotationsByDeclaration(resolveSession, modifierList, declaration))
+            forceResolveAnnotationsInside(modifierList)
         } else {
             val fileAnnotationList = ktAnnotationEntry.getParentOfType<KtFileAnnotationList>(true)
             if (fileAnnotationList != null) {
