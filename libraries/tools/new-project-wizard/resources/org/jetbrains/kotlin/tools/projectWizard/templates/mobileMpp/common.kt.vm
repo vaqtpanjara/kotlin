@@ -7,5 +7,5 @@ expect class Platform() {
 #set( $TEMPLATE_BEGIN= '${' )
 
 class Greeting {
-    fun greeting(): String = "Hello, ${TEMPLATE_BEGIN}Platform().platform}"
+    fun greeting(): String = "Hello, ${TEMPLATE_BEGIN}Platform().platform}!"
 }

@@ -1,22 +1,17 @@
 package ${package}
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.appcompat.app.AppCompatActivity
 import ${sharedPackage}.Greeting
-import kotlin.properties.Delegates
 
 class MainActivity : AppCompatActivity() {
-    private var rootLayout: ConstraintLayout by Delegates.notNull()
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val tv = TextView(this)
+        val tv: TextView = findViewById(R.id.text_view)
         tv.text = Greeting().greeting()
-        rootLayout = findViewById(R.id.main_view)
-        rootLayout.addView(tv)
     }
 }
+
