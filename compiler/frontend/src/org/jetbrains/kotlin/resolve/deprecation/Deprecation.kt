@@ -35,6 +35,24 @@ internal sealed class DeprecatedByAnnotation(
             return replaceWithAnnotation?.argumentValue(ReplaceWith::expression.name)?.safeAs<StringValue>()?.value
         }
 
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is DeprecatedByAnnotation) return false
+
+        if (annotation != other.annotation) return false
+        if (target != other.target) return false
+        if (propagatesToOverrides != other.propagatesToOverrides) return false
+
+        return true
+    }
+
+    override fun hashCode(): Int {
+        var hash = annotation.hashCode()
+        hash += 31 * target.hashCode()
+        hash += 31 * propagatesToOverrides.hashCode()
+        return hash
+    }
+
     class StandardDeprecated(
         annotation: AnnotationDescriptor,
         target: DeclarationDescriptor,
@@ -54,7 +72,17 @@ internal sealed class DeprecatedByAnnotation(
         target: DeclarationDescriptor,
         propagatesToOverrides: Boolean,
         override val deprecationLevel: DeprecationLevelValue
-    ) : DeprecatedByAnnotation(annotation, target, propagatesToOverrides)
+    ) : DeprecatedByAnnotation(annotation, target, propagatesToOverrides) {
+        override fun equals(other: Any?): Boolean {
+            if (!super.equals(other)) return false
+            if (other !is DeprecatedSince) return false
+
+            return deprecationLevel == other.deprecationLevel
+        }
+
+        override fun hashCode(): Int =
+            super.hashCode() + 31 * deprecationLevel.hashCode()
+    }
 
     companion object {
         fun create(
