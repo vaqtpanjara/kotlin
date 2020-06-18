@@ -331,13 +331,17 @@ internal fun KtModifierListOwner.isDeprecated(support: KtUltraLightSupport? = nu
     val modifierList = this.modifierList ?: return false
     if (modifierList.annotationEntries.isEmpty()) return false
 
+    val deprecatedFqName = KotlinBuiltIns.FQ_NAMES.deprecated
+    val deprecatedName = deprecatedFqName.shortName().asString()
+
     for (annotationEntry in modifierList.annotationEntries) {
         // If it's not a user type, it's definitely not a reference to deprecated
         val typeElement = annotationEntry.typeReference?.typeElement as? KtUserType ?: continue
 
         val fqName = toQualifiedName(typeElement) ?: continue
 
-        if (fqName == KotlinBuiltIns.FQ_NAMES.deprecated) return true
+        if (fqName == deprecatedFqName) return true
+        if (fqName.asString() == deprecatedName) return true
     }
 
     return support?.findAnnotation(this, KotlinBuiltIns.FQ_NAMES.deprecated) !== null
