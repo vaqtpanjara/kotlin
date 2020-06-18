@@ -6,21 +6,18 @@
 package org.jetbrains.kotlin.tools.projectWizard.settings.buildsystem
 
 import org.jetbrains.kotlin.tools.projectWizard.core.*
-import org.jetbrains.kotlin.tools.projectWizard.core.asSingletonList
 import org.jetbrains.kotlin.tools.projectWizard.ir.buildsystem.BuildSystemIR
 import org.jetbrains.kotlin.tools.projectWizard.ir.buildsystem.DependencyType
 import org.jetbrains.kotlin.tools.projectWizard.ir.buildsystem.GradleRootProjectDependencyIR
 import org.jetbrains.kotlin.tools.projectWizard.ir.buildsystem.ModuleDependencyIR
-import org.jetbrains.kotlin.tools.projectWizard.ir.buildsystem.gradle.*
+import org.jetbrains.kotlin.tools.projectWizard.ir.buildsystem.gradle.GradleBinaryExpressionIR
+import org.jetbrains.kotlin.tools.projectWizard.ir.buildsystem.gradle.GradleByClassTasksCreateIR
+import org.jetbrains.kotlin.tools.projectWizard.ir.buildsystem.gradle.GradleConfigureTaskIR
+import org.jetbrains.kotlin.tools.projectWizard.ir.buildsystem.gradle.irsList
 import org.jetbrains.kotlin.tools.projectWizard.moduleConfigurators.*
 import org.jetbrains.kotlin.tools.projectWizard.plugins.buildSystem.isGradle
 import org.jetbrains.kotlin.tools.projectWizard.plugins.kotlin.ModulesToIrConversionData
-import org.jetbrains.kotlin.tools.projectWizard.plugins.kotlin.isIOS
 import org.jetbrains.kotlin.tools.projectWizard.plugins.printer.GradlePrinter
-import org.jetbrains.kotlin.tools.projectWizard.plugins.projectPath
-import org.jetbrains.kotlin.tools.projectWizard.plugins.templates.TemplatesPlugin
-import org.jetbrains.kotlin.tools.projectWizard.templates.FileTemplate
-import org.jetbrains.kotlin.tools.projectWizard.templates.FileTemplateDescriptor
 import java.nio.file.Path
 import kotlin.reflect.KClass
 
@@ -78,22 +75,6 @@ sealed class ModuleDependencyType(
         override fun createDependencyIrs(from: Module, to: Module, data: ModulesToIrConversionData): List<BuildSystemIR> =
             emptyList()
 
-        override fun SettingsWriter.runArbitraryTask(
-            from: Module,
-            to: Module,
-            toModulePath: Path,
-            data: ModulesToIrConversionData
-        ): TaskResult<Unit> = withSettingsOf(from) {
-            IOSSinglePlatformModuleConfigurator.dependentModule.reference
-                .setValue(IOSSinglePlatformModuleConfigurator.DependentModuleReference(to))
-            val dummyFilePath = Defaults.SRC_DIR / "${to.iosTargetSafe()!!.name}Main" / to.configurator.kotlinDirectoryName / "dummyFile.kt"
-            TemplatesPlugin::addFileTemplate.execute(
-                FileTemplate(
-                    FileTemplateDescriptor("ios/dummyFile.kt", dummyFilePath),
-                    projectPath / toModulePath
-                )
-            )
-        }
 
         override fun additionalAcceptanceChecker(from: Module, to: Module): Boolean =
             to.iosTargetSafe() != null

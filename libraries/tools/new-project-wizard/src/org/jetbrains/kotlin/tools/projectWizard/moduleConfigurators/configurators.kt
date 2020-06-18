@@ -1,10 +1,14 @@
+/*
+ * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ */
+
 package org.jetbrains.kotlin.tools.projectWizard.moduleConfigurators
 
 
 import org.jetbrains.annotations.NonNls
 import org.jetbrains.kotlin.tools.projectWizard.KotlinNewProjectWizardBundle
-import org.jetbrains.kotlin.tools.projectWizard.core.Reader
-import org.jetbrains.kotlin.tools.projectWizard.core.buildList
+import org.jetbrains.kotlin.tools.projectWizard.core.*
 import org.jetbrains.kotlin.tools.projectWizard.core.entity.settings.ModuleConfiguratorSetting
 import org.jetbrains.kotlin.tools.projectWizard.core.safeAs
 import org.jetbrains.kotlin.tools.projectWizard.ir.buildsystem.BuildSystemIR
@@ -16,9 +20,14 @@ import org.jetbrains.kotlin.tools.projectWizard.plugins.buildSystem.BuildSystemT
 import org.jetbrains.kotlin.tools.projectWizard.plugins.buildSystem.isGradle
 import org.jetbrains.kotlin.tools.projectWizard.plugins.kotlin.ModulesToIrConversionData
 import org.jetbrains.kotlin.tools.projectWizard.plugins.kotlin.ModuleType
+import org.jetbrains.kotlin.tools.projectWizard.plugins.templates.TemplatesPlugin
 import org.jetbrains.kotlin.tools.projectWizard.settings.DisplayableSettingItem
 import org.jetbrains.kotlin.tools.projectWizard.settings.buildsystem.Module
 import org.jetbrains.kotlin.tools.projectWizard.settings.buildsystem.ModuleKind
+import org.jetbrains.kotlin.tools.projectWizard.settings.javaPackage
+import org.jetbrains.kotlin.tools.projectWizard.templates.FileTemplate
+import org.jetbrains.kotlin.tools.projectWizard.templates.FileTemplateDescriptor
+import java.nio.file.Path
 
 interface JvmModuleConfigurator : ModuleConfiguratorWithTests {
     companion object : ModuleConfiguratorSettings() {
@@ -73,6 +82,38 @@ object MppModuleConfigurator : ModuleConfigurator {
             KotlinBuildSystemPluginIR.Type.multiplatform,
             version = configurationData.kotlinVersion
         )
+
+    override fun Writer.runArbitraryTask(
+        configurationData: ModulesToIrConversionData,
+        module: Module,
+        modulePath: Path
+    ): TaskResult<Unit> = computeM {
+        val javaPackage = module.javaPackage(configurationData.pomIr)
+        val settings = mapOf("package" to javaPackage.asCodePackage())
+
+        val androidKt = FileTemplateDescriptor(
+            "mobileMpp/android.kt.vm",
+            "src" / "androidMain" / "kotlin" / "android.kt"
+        )
+
+        val iosKt = FileTemplateDescriptor(
+            "mobileMpp/ios.kt.vm",
+            "src" / "iosMain" / "kotlin" / "ios.kt"
+        )
+
+        val commonKt = FileTemplateDescriptor(
+            "mobileMpp/common.kt.vm",
+            "src" / "commonMain" / "kotlin" / "common.kt"
+        )
+
+        TemplatesPlugin::addFileTemplates.execute(
+            listOf(
+                FileTemplate(androidKt, modulePath, settings),
+                FileTemplate(commonKt, modulePath, settings),
+                FileTemplate(iosKt, modulePath, settings)
+            )
+        )
+    }
 }
 
 
