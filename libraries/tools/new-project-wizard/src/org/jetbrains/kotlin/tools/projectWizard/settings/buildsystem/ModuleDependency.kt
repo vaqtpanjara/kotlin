@@ -75,6 +75,16 @@ sealed class ModuleDependencyType(
         override fun createDependencyIrs(from: Module, to: Module, data: ModulesToIrConversionData): List<BuildSystemIR> =
             emptyList()
 
+        override fun SettingsWriter.runArbitraryTask(
+            from: Module,
+            to: Module,
+            toModulePath: Path,
+            data: ModulesToIrConversionData
+        ): TaskResult<Unit> = withSettingsOf(from) {
+            IOSSinglePlatformModuleConfigurator.dependentModule.reference
+                .setValue(IOSSinglePlatformModuleConfigurator.DependentModuleReference(to))
+            Success(Unit)
+        }
 
         override fun additionalAcceptanceChecker(from: Module, to: Module): Boolean =
             to.iosTargetSafe() != null
