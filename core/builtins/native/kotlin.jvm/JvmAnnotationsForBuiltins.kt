@@ -5,6 +5,12 @@
 
 package kotlin.jvm
 
+// used in kotlin.reflect.KTypeProjection
+
 @Target(AnnotationTarget.FUNCTION, AnnotationTarget.PROPERTY, AnnotationTarget.PROPERTY_GETTER, AnnotationTarget.PROPERTY_SETTER)
 @MustBeDocumented
 internal annotation class JvmStatic()
+
+@Target(AnnotationTarget.FIELD)
+@MustBeDocumented
+internal annotation class JvmField()
