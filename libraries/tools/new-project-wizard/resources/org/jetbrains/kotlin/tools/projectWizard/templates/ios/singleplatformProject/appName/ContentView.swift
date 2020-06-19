@@ -1,9 +1,13 @@
 import SwiftUI
 import $sharedModuleName
 
+func greet() -> String {
+    return Greeting().greeting()
+}
+
 struct ContentView: View {
     var body: some View {
-        Text(Greeting().greeting())
+        Text(greet())
     }
 }
 
