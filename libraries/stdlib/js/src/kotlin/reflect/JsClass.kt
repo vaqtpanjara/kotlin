@@ -19,16 +19,6 @@ external interface JsClass<T : Any> {
     val name: String
 }
 
-internal external fun <T : Any> jsClass(): JsClass<T>
-
-internal val <T : Any> T.jsClass: JsClass<T>
-    get() = when (jsTypeOf(this)) {
-        "string" -> js("String")
-        "number" -> js("Number")
-        "boolean" -> js("Boolean")
-        else -> js("Object").getPrototypeOf(this).constructor
-    }
-
 /**
  * Obtains a constructor reference for the given `KClass`.
  */
