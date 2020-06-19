@@ -13,6 +13,8 @@ object Versions {
     val GRADLE = version("6.3")
     val KTOR = version("1.2.6")
 
+    val JUNIT = version("4.12")
+
     object ANDROID {
         val ANDROIDX_CORE_KTX = version("1.2.0")
         val ANDROIDX_APPCOMPAT = version("1.1.0")

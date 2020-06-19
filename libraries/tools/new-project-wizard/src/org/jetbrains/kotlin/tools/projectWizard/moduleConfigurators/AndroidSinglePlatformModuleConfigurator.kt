@@ -85,6 +85,12 @@ object AndroidSinglePlatformModuleConfigurator :
             version = Versions.ANDROID.ANDROIDX_CONSTRAINTLAYOUT,
             dependencyType = DependencyType.MAIN
         )
+
+        +ArtifactBasedLibraryDependencyIR(
+            MavenArtifact(DefaultRepository.MAVEN_CENTRAL, "junit", "junit"),
+            version = Versions.JUNIT,
+            dependencyType = DependencyType.TEST
+        )
     }
 
     override fun Writer.runArbitraryTask(
@@ -108,6 +114,7 @@ object AndroidSinglePlatformModuleConfigurator :
                 FileTemplate(AndroidModuleConfigurator.FileTemplateDescriptors.androidManifestXml, modulePath, settings),
                 FileTemplate(AndroidModuleConfigurator.FileTemplateDescriptors.colorsXml, modulePath, settings),
                 FileTemplate(AndroidModuleConfigurator.FileTemplateDescriptors.stylesXml, modulePath, settings),
+                FileTemplate(AndroidModuleConfigurator.FileTemplateDescriptors.greetingTestKt(javaPackage), modulePath, settings),
                 FileTemplate(AndroidModuleConfigurator.FileTemplateDescriptors.mainActivityKt(javaPackage), modulePath, settings)
             )
         )

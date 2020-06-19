@@ -114,6 +114,11 @@ interface AndroidModuleConfigurator : ModuleConfigurator,
             "src" / "main" / "res" / "values" / "styles.xml"
         )
 
+        fun greetingTestKt(javaPackage: JavaPackage) = FileTemplateDescriptor(
+            "android/GreetingTest.kt.vm",
+            "src" / "test" / "java" / javaPackage.asPath() / "GreetingTest.kt"
+        )
+
         fun mainActivityKt(javaPackage: JavaPackage) = FileTemplateDescriptor(
             "android/MainActivity.kt.vm",
             "src" / "main" / "java" / javaPackage.asPath() / "MainActivity.kt"
