@@ -85,9 +85,9 @@ class TypeTranslator(
 
         when {
             flexibleApproximatedType.isError ->
-                return IrErrorTypeImpl(flexibleApproximatedType, translateTypeAnnotations(flexibleApproximatedType), variance)
+                return IrErrorTypeImpl(flexibleApproximatedType, translateTypeAnnotations(flexibleApproximatedType.annotations), variance)
             flexibleApproximatedType.isDynamic() ->
-                return IrDynamicTypeImpl(flexibleApproximatedType, translateTypeAnnotations(flexibleApproximatedType), variance)
+                return IrDynamicTypeImpl(flexibleApproximatedType, translateTypeAnnotations(flexibleApproximatedType.annotations), variance)
         }
 
         val approximatedType = flexibleApproximatedType.upperIfFlexible()
@@ -115,13 +115,13 @@ class TypeTranslator(
             when (ktTypeDescriptor) {
                 is TypeParameterDescriptor -> {
                     classifier = resolveTypeParameter(ktTypeDescriptor)
-                    annotations = translateTypeAnnotations(approximatedType)
+                    annotations = translateTypeAnnotations(approximatedType.annotations)
                 }
 
                 is ClassDescriptor -> {
                     classifier = symbolTable.referenceClass(ktTypeDescriptor)
                     arguments = translateTypeArguments(approximatedType.arguments)
-                    annotations = translateTypeAnnotations(approximatedType)
+                    annotations = translateTypeAnnotations(approximatedType.annotations)
                 }
 
                 else ->
@@ -144,7 +144,7 @@ class TypeTranslator(
             symbolTable.referenceTypeAlias(typeAliasDescriptor),
             isMarkedNullable,
             translateTypeArguments(this.arguments),
-            translateTypeAnnotations(this)
+            translateTypeAnnotations(this.annotations)
         )
     }
 
@@ -184,11 +184,8 @@ class TypeTranslator(
                 approximateCapturedTypes(ktType).upper
         }
 
-    private fun translateTypeAnnotations(type: KotlinType): List<IrConstructorCall> {
-        val result = mutableListOf<IrConstructorCall>()
-        type.annotations.mapNotNullTo(result, constantValueGenerator::generateAnnotationConstructorCall)
-        return result
-    }
+    private fun translateTypeAnnotations(annotations: Annotations): List<IrConstructorCall> =
+        annotations.mapNotNull(constantValueGenerator::generateAnnotationConstructorCall)
 
     private fun translateTypeArguments(arguments: List<TypeProjection>) =
         arguments.map {
