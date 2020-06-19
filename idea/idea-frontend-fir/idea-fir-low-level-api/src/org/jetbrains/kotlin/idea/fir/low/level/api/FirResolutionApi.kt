@@ -10,10 +10,13 @@ import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.fir.FirElement
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.*
+import org.jetbrains.kotlin.fir.expressions.FirStatement
 import org.jetbrains.kotlin.fir.psi
 import org.jetbrains.kotlin.fir.references.*
 import org.jetbrains.kotlin.fir.render
-import org.jetbrains.kotlin.fir.resolve.*
+import org.jetbrains.kotlin.fir.resolve.FirTowerDataContext
+import org.jetbrains.kotlin.fir.resolve.ResolutionMode
+import org.jetbrains.kotlin.fir.resolve.ScopeSession
 import org.jetbrains.kotlin.fir.resolve.providers.FirProvider
 import org.jetbrains.kotlin.fir.resolve.providers.getClassDeclaredCallableSymbols
 import org.jetbrains.kotlin.fir.resolve.transformers.body.resolve.FirBodyResolveTransformer
@@ -165,7 +168,8 @@ internal fun FirDeclaration.runResolve(
     file: FirFile,
     firProvider: FirIdeProvider,
     toPhase: FirResolvePhase,
-    state: FirModuleResolveState
+    state: FirModuleResolveState,
+    towerDataContextForStatement: MutableMap<FirStatement, FirTowerDataContext>? = null,
 ) {
     val nonLazyPhase = minOf(toPhase, FirResolvePhase.DECLARATIONS)
     file.runResolve(toPhase = nonLazyPhase, fromPhase = this.resolvePhase)
@@ -196,7 +200,8 @@ internal fun FirDeclaration.runResolve(
     val transformer = FirDesignatedBodyResolveTransformerForIDE(
         designation.iterator(), state.getSession(psi as KtElement),
         scopeSession,
-        implicitTypeOnly = toPhase == FirResolvePhase.IMPLICIT_TYPES_BODY_RESOLVE
+        implicitTypeOnly = toPhase == FirResolvePhase.IMPLICIT_TYPES_BODY_RESOLVE,
+        towerDataContextForStatement
     )
     file.transform<FirFile, ResolutionMode>(transformer, ResolutionMode.ContextDependent)
 }
@@ -205,7 +210,8 @@ private class FirDesignatedBodyResolveTransformerForIDE(
     private val designation: Iterator<FirElement>,
     session: FirSession,
     scopeSession: ScopeSession,
-    implicitTypeOnly: Boolean
+    implicitTypeOnly: Boolean,
+    private val towerDataContextForStatement: MutableMap<FirStatement, FirTowerDataContext>? = null
 ) : FirBodyResolveTransformer(
     session,
     phase = FirResolvePhase.IMPLICIT_TYPES_BODY_RESOLVE,
@@ -213,6 +219,7 @@ private class FirDesignatedBodyResolveTransformerForIDE(
     scopeSession = scopeSession,
     returnTypeCalculator = createReturnTypeCalculatorForIDE(session, scopeSession)
 ) {
+
     override fun transformDeclarationContent(declaration: FirDeclaration, data: ResolutionMode): CompositeTransformResult<FirDeclaration> {
         if (designation.hasNext()) {
             designation.next().visitNoTransform(this, data)
@@ -220,6 +227,11 @@ private class FirDesignatedBodyResolveTransformerForIDE(
         }
 
         return super.transformDeclarationContent(declaration, data)
+    }
+
+    override fun onBeforeStatementResolution(statement: FirStatement) {
+        if (towerDataContextForStatement == null) return
+        towerDataContextForStatement[statement] = context.towerDataContext
     }
 }
 
