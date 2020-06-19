@@ -171,7 +171,11 @@ class JvmBinaryAnnotationDeserializer(
                     CallableKind.PROPERTY_SETTER ->
                         if (signature.hasSetter()) MemberSignature.fromMethod(nameResolver, signature.setter) else null
                     CallableKind.PROPERTY ->
-                        getPropertySignature(proto, nameResolver, typeTable, true, true, requireHasFieldFlagForField)
+                        getPropertySignature(
+                            proto, nameResolver, typeTable,
+                            field = true,
+                            requireHasFieldFlagForField = requireHasFieldFlagForField
+                        )
                     else ->
                         null
                 }

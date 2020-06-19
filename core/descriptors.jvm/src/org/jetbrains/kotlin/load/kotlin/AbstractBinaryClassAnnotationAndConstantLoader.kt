@@ -397,7 +397,11 @@ abstract class AbstractBinaryClassAnnotationAndConstantLoader<A : Any, C : Any>(
                     AnnotatedCallableKind.PROPERTY_SETTER ->
                         if (signature.hasSetter()) MemberSignature.fromMethod(nameResolver, signature.setter) else null
                     AnnotatedCallableKind.PROPERTY ->
-                        getPropertySignature(proto, nameResolver, typeTable, true, true, requireHasFieldFlagForField)
+                        getPropertySignature(
+                            proto, nameResolver, typeTable,
+                            field = true,
+                            requireHasFieldFlagForField = requireHasFieldFlagForField
+                        )
                     else -> null
                 }
             }
