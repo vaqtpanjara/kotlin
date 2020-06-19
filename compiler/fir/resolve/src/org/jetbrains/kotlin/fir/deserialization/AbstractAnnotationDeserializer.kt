@@ -32,7 +32,6 @@ import org.jetbrains.kotlin.metadata.deserialization.Flags
 import org.jetbrains.kotlin.metadata.deserialization.NameResolver
 import org.jetbrains.kotlin.metadata.deserialization.TypeTable
 import org.jetbrains.kotlin.serialization.deserialization.builtins.BuiltInSerializerProtocol
-import org.jetbrains.kotlin.serialization.deserialization.descriptors.DeserializedContainerSource
 import org.jetbrains.kotlin.serialization.deserialization.getClassId
 import org.jetbrains.kotlin.serialization.deserialization.getName
 
@@ -48,7 +47,6 @@ abstract class AbstractAnnotationDeserializer(
     }
 
     open fun loadFunctionAnnotations(
-        containerSource: DeserializedContainerSource?,
         functionProto: ProtoBuf.Function,
         nameResolver: NameResolver,
         typeTable: TypeTable
@@ -59,7 +57,6 @@ abstract class AbstractAnnotationDeserializer(
     }
 
     open fun loadPropertyAnnotations(
-        containerSource: DeserializedContainerSource?,
         propertyProto: ProtoBuf.Property,
         nameResolver: NameResolver,
         typeTable: TypeTable
@@ -70,7 +67,6 @@ abstract class AbstractAnnotationDeserializer(
     }
 
     open fun loadPropertyBackingFieldAnnotations(
-        containerSource: DeserializedContainerSource?,
         propertyProto: ProtoBuf.Property,
         nameResolver: NameResolver,
         typeTable: TypeTable
@@ -79,7 +75,6 @@ abstract class AbstractAnnotationDeserializer(
     }
 
     open fun loadPropertyDelegatedFieldAnnotations(
-        containerSource: DeserializedContainerSource?,
         propertyProto: ProtoBuf.Property,
         nameResolver: NameResolver,
         typeTable: TypeTable
@@ -88,7 +83,6 @@ abstract class AbstractAnnotationDeserializer(
     }
 
     open fun loadPropertyGetterAnnotations(
-        containerSource: DeserializedContainerSource?,
         propertyProto: ProtoBuf.Property,
         nameResolver: NameResolver,
         typeTable: TypeTable,
@@ -100,7 +94,6 @@ abstract class AbstractAnnotationDeserializer(
     }
 
     open fun loadPropertySetterAnnotations(
-        containerSource: DeserializedContainerSource?,
         propertyProto: ProtoBuf.Property,
         nameResolver: NameResolver,
         typeTable: TypeTable,
@@ -112,7 +105,6 @@ abstract class AbstractAnnotationDeserializer(
     }
 
     open fun loadConstructorAnnotations(
-        containerSource: DeserializedContainerSource?,
         constructorProto: ProtoBuf.Constructor,
         nameResolver: NameResolver,
         typeTable: TypeTable
