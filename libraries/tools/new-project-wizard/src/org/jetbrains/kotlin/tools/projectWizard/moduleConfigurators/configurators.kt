@@ -96,9 +96,19 @@ object MppModuleConfigurator : ModuleConfigurator {
             "src" / "androidMain" / "kotlin" / "android.kt"
         )
 
+        val androidTestKt = FileTemplateDescriptor(
+            "mobileMpp/androidTest.kt.vm",
+            "src" / "androidTest" / "kotlin" / "androidTest.kt"
+        )
+
         val iosKt = FileTemplateDescriptor(
             "mobileMpp/ios.kt.vm",
             "src" / "iosMain" / "kotlin" / "ios.kt"
+        )
+
+        val iosTestKt = FileTemplateDescriptor(
+            "mobileMpp/iosTest.kt.vm",
+            "src" / "iosTest" / "kotlin" / "iosTest.kt"
         )
 
         val commonKt = FileTemplateDescriptor(
@@ -109,8 +119,10 @@ object MppModuleConfigurator : ModuleConfigurator {
         TemplatesPlugin::addFileTemplates.execute(
             listOf(
                 FileTemplate(androidKt, modulePath, settings),
+                FileTemplate(androidTestKt, modulePath, settings),
                 FileTemplate(commonKt, modulePath, settings),
-                FileTemplate(iosKt, modulePath, settings)
+                FileTemplate(iosKt, modulePath, settings),
+                FileTemplate(iosTestKt, modulePath, settings)
             )
         )
     }

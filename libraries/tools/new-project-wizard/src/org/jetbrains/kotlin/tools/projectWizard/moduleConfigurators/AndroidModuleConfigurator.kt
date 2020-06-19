@@ -153,6 +153,15 @@ object AndroidTargetConfigurator : TargetConfigurator,
         +androidPlugin
     }
 
+    override fun createModuleIRs(reader: Reader, configurationData: ModulesToIrConversionData, module: Module): List<BuildSystemIR> =
+        buildList {
+            +ArtifactBasedLibraryDependencyIR(
+                MavenArtifact(DefaultRepository.MAVEN_CENTRAL, "junit", "junit"),
+                version = Versions.JUNIT,
+                dependencyType = DependencyType.TEST
+            )
+        }
+
     override fun Writer.runArbitraryTask(
         configurationData: ModulesToIrConversionData,
         module: Module,
