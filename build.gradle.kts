@@ -506,6 +506,33 @@ gradle.taskGraph.whenReady {
         else
             ZipEntryCompression.STORED
     }
+
+    if(allTasks.filterIsInstance<tests.AggregateTest>().isNotEmpty()) {
+        val patterns = mutableMapOf<String, List<String>>()
+
+        allTasks.filterIsInstance<tests.AggregateTest>().forEach { aggregateTask ->
+            patterns.putAll(File(aggregateTask.testPatternPath!!)
+                                .readLines()
+                                .asSequence()
+                                .map { it.trim().split(',') }
+                                .filter { it.isNotEmpty() }
+                                .drop(1)
+                                .groupBy({ it[1].trim() }, { it[0].trim() })
+            )
+        }
+
+        println(patterns["include"])
+        println(patterns["exclude"])
+
+        allTasks.filterIsInstance<Test>().forEach { testTask ->
+            patterns["exclude"]?.let { testTask.exclude(it) }
+            patterns["include"]?.let { testTask.include(it) }
+            testTask.filter { isFailOnNoMatchingTests = false }
+            testTask.testLogging {
+                events("passed", "skipped", "failed")
+            }
+        }
+    }
 }
 
 val dist = tasks.register("dist") {
@@ -807,75 +834,20 @@ tasks {
         }
     }
 
-    register("kmmTest") {
-        val testTasks = File("tests/mpp/test-tasks.csv")
+    register("kmmTest", test.AggregateTest::class) {
+        testTasksPath = "tests/mpp/test-tasks.csv"
+        testPatternPath = "tests/mpp/test-tasks.csv"
+
+        classpath = files("stub")
+        testClassesDirs = files("stub")
+        binaryResultsDirectory.convention(rootProject.layout.buildDirectory.dir("test"))
+
+        File(testTasksPath!!)
             .readLines()
-            .mapNotNull { if (it.startsWith(":")) findByPath(it) else findByName(it) }
-        val taskWithDependencies = testTasks.flatMap { it.taskDependencies.getDependencies(it) }.union(testTasks)
-
-        taskWithDependencies.filter { it !is Test }.forEach {
-            dependsOn(it.toString().split("'")[1])
-        }
-        var testCount = 0L
-        var successfulTestCount = 0L
-        var failedTestCount = 0L
-        var skippedTestCount = 0L
-
-        doFirst {
-            val patterns = File("tests/mpp/kmm-tests.csv")
-                .readLines()
-                .asSequence()
-                .map { it.trim().split(',') }
-                .filter { it.isNotEmpty() }
-                .drop(1)
-                .groupBy({ it[1].trim() }, { it[0].trim() })
-            val executeTest = { testTask: Test ->
-                patterns["exclude"]?.let { testTask.exclude(it) }
-                patterns["include"]?.let { testTask.include(it) }
-                testTask.filter { isFailOnNoMatchingTests = false }
-                testTask.testLogging {
-                    events("passed", "skipped", "failed")
-                }
-                testTask.addTestListener(object : TestListener {
-                    override fun afterSuite(desc: TestDescriptor, result: TestResult) {
-                        if (desc.parent == null) { // will match the outermost suite
-                            testCount += result.testCount
-                            successfulTestCount += result.successfulTestCount
-                            failedTestCount += result.failedTestCount
-                            skippedTestCount += result.skippedTestCount
-                        }
-                    }
-
-                    override fun beforeSuite(suite: TestDescriptor) {}
-                    override fun afterTest(testDescriptor: TestDescriptor, result: TestResult) {}
-                    override fun beforeTest(testDescriptor: TestDescriptor) {}
-                })
-                testTask.maxParallelForks =
-                    Math.max(Runtime.getRuntime().availableProcessors() / if (kotlinBuildProperties.isTeamcityBuild) 2 else 4, 1)
-                println("Execute: $testTask")
-                try {
-                    testTask.executeTests()
-                } catch (ex: GradleException) {
-                }
+            .filter { it.isNotEmpty() && !it.startsWith("//")}
+            .forEach {
+                dependsOn(it)
             }
-            taskWithDependencies.filterIsInstance<Test>().forEach {
-                executeTest(it)
-            }
-        }
-
-        doLast {
-            val resultType = if (failedTestCount > 0) TestResult.ResultType.FAILURE else TestResult.ResultType.SUCCESS
-            val output =
-                "Results: $resultType ($testCount tests, $successfulTestCount successes, $failedTestCount failures, $skippedTestCount skipped)"
-            val startItem = "|  "
-            val endItem = "  |"
-            val repeatLength = startItem.length + output.length + endItem.length
-            println(
-                "\n" + ("-".repeat(repeatLength)) + "\n" + startItem + output + endItem + "\n" + ("-".repeat(
-                    repeatLength
-                ))
-            )
-        }
     }
 
     register("test") {
