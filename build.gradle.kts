@@ -507,10 +507,10 @@ gradle.taskGraph.whenReady {
             ZipEntryCompression.STORED
     }
 
-    if(allTasks.filterIsInstance<tests.AggregateTest>().isNotEmpty()) {
+    if(allTasks.filterIsInstance<AggregateTest>().isNotEmpty()) {
         val patterns = mutableMapOf<String, List<String>>()
 
-        allTasks.filterIsInstance<tests.AggregateTest>().forEach { aggregateTask ->
+        allTasks.filterIsInstance<AggregateTest>().forEach { aggregateTask ->
             patterns.putAll(File(aggregateTask.testPatternPath!!)
                                 .readLines()
                                 .asSequence()
@@ -834,7 +834,7 @@ tasks {
         }
     }
 
-    register("kmmTest", test.AggregateTest::class) {
+    register("kmmTest", AggregateTest::class) {
         testTasksPath = "tests/mpp/test-tasks.csv"
         testPatternPath = "tests/mpp/test-tasks.csv"
 
