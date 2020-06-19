@@ -6,11 +6,14 @@
 package org.jetbrains.kotlin.fir.java.deserialization
 
 import org.jetbrains.kotlin.descriptors.SourceElement
+import org.jetbrains.kotlin.descriptors.annotations.AnnotationUseSiteTarget
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.deserialization.AbstractAnnotationDeserializer
 import org.jetbrains.kotlin.fir.expressions.FirAnnotationCall
+import org.jetbrains.kotlin.fir.expressions.builder.buildAnnotationCall
 import org.jetbrains.kotlin.fir.resolve.firSymbolProvider
 import org.jetbrains.kotlin.fir.resolve.providers.impl.FirCompositeSymbolProvider
+import org.jetbrains.kotlin.load.java.JvmAbi
 import org.jetbrains.kotlin.load.kotlin.KotlinJvmBinaryClass
 import org.jetbrains.kotlin.load.kotlin.MemberSignature
 import org.jetbrains.kotlin.metadata.ProtoBuf
@@ -34,6 +37,7 @@ class JvmBinaryAnnotationDeserializer(
     }
 
     private enum class CallableKind {
+        PROPERTY,
         PROPERTY_GETTER,
         PROPERTY_SETTER,
         OTHERS
@@ -64,6 +68,63 @@ class JvmBinaryAnnotationDeserializer(
         return findJvmBinaryClassAndLoadMemberAnnotations(containerSource, signature)
     }
 
+    override fun loadPropertyAnnotations(
+        containerSource: DeserializedContainerSource?,
+        propertyProto: ProtoBuf.Property,
+        nameResolver: NameResolver,
+        typeTable: TypeTable
+    ): List<FirAnnotationCall> {
+        val signature = getPropertySignature(propertyProto, nameResolver, typeTable, synthetic = true) ?: return emptyList()
+        return findJvmBinaryClassAndLoadMemberAnnotations(containerSource, signature).map {
+            buildAnnotationCall {
+                annotationTypeRef = it.annotationTypeRef
+                argumentList = it.argumentList
+                useSiteTarget = AnnotationUseSiteTarget.PROPERTY
+            }
+        }
+    }
+
+    private val MemberSignature.isDelegated: Boolean
+        get() = JvmAbi.DELEGATED_PROPERTY_NAME_SUFFIX in this.signature
+
+    override fun loadPropertyBackingFieldAnnotations(
+        containerSource: DeserializedContainerSource?,
+        propertyProto: ProtoBuf.Property,
+        nameResolver: NameResolver,
+        typeTable: TypeTable
+    ): List<FirAnnotationCall> {
+        val signature = getPropertySignature(propertyProto, nameResolver, typeTable, field = true) ?: return emptyList()
+        if (signature.isDelegated) {
+            return emptyList()
+        }
+        return findJvmBinaryClassAndLoadMemberAnnotations(containerSource, signature).map {
+            buildAnnotationCall {
+                annotationTypeRef = it.annotationTypeRef
+                argumentList = it.argumentList
+                useSiteTarget = AnnotationUseSiteTarget.FIELD
+            }
+        }
+    }
+
+    override fun loadPropertyDelegatedFieldAnnotations(
+        containerSource: DeserializedContainerSource?,
+        propertyProto: ProtoBuf.Property,
+        nameResolver: NameResolver,
+        typeTable: TypeTable
+    ): List<FirAnnotationCall> {
+        val signature = getPropertySignature(propertyProto, nameResolver, typeTable, field = true) ?: return emptyList()
+        if (!signature.isDelegated) {
+            return emptyList()
+        }
+        return findJvmBinaryClassAndLoadMemberAnnotations(containerSource, signature).map {
+            buildAnnotationCall {
+                annotationTypeRef = it.annotationTypeRef
+                argumentList = it.argumentList
+                useSiteTarget = AnnotationUseSiteTarget.PROPERTY_DELEGATE_FIELD
+            }
+        }
+    }
+
     override fun loadPropertyGetterAnnotations(
         containerSource: DeserializedContainerSource?,
         propertyProto: ProtoBuf.Property,
@@ -90,7 +151,8 @@ class JvmBinaryAnnotationDeserializer(
         proto: MessageLite,
         nameResolver: NameResolver,
         typeTable: TypeTable,
-        kind: CallableKind = CallableKind.OTHERS
+        kind: CallableKind = CallableKind.OTHERS,
+        requireHasFieldFlagForField: Boolean = false
     ): MemberSignature? {
         return when (proto) {
             is ProtoBuf.Constructor -> {
@@ -100,8 +162,6 @@ class JvmBinaryAnnotationDeserializer(
             }
             is ProtoBuf.Function -> {
                 val signature = JvmProtoBufUtil.getJvmMethodSignature(proto, nameResolver, typeTable) ?: return null
-                // TODO: Investigate why annotations for accessors affect resolution, resulting in dangling type parameter.
-                //   regressions: Fir2IrTextTest.Declarations.test*LevelProperties
                 // This is necessary because of libraries/stdlib/src/kotlin/collections/MapAccessors.kt:43 as
                 // we now load that overload as low-priority and choose another one, but we don't support @Exact yet
                 // that is necessary to correctly resolve the latter
@@ -118,13 +178,35 @@ class JvmBinaryAnnotationDeserializer(
                         if (signature.hasGetter()) MemberSignature.fromMethod(nameResolver, signature.getter) else null
                     CallableKind.PROPERTY_SETTER ->
                         if (signature.hasSetter()) MemberSignature.fromMethod(nameResolver, signature.setter) else null
-                    // TODO: PROPERTY
+                    CallableKind.PROPERTY ->
+                        getPropertySignature(proto, nameResolver, typeTable, true, true, requireHasFieldFlagForField)
                     else ->
                         null
                 }
             }
             else -> null
         }
+    }
+
+    private fun getPropertySignature(
+        proto: ProtoBuf.Property,
+        nameResolver: NameResolver,
+        typeTable: TypeTable,
+        field: Boolean = false,
+        synthetic: Boolean = false,
+        requireHasFieldFlagForField: Boolean = true
+    ): MemberSignature? {
+        val signature = proto.getExtensionOrNull(JvmProtoBuf.propertySignature) ?: return null
+
+        if (field) {
+            val fieldSignature =
+                JvmProtoBufUtil.getJvmFieldSignature(proto, nameResolver, typeTable, requireHasFieldFlagForField) ?: return null
+            return MemberSignature.fromJvmMemberSignature(fieldSignature)
+        } else if (synthetic && signature.hasSyntheticMethod()) {
+            return MemberSignature.fromMethod(nameResolver, signature.syntheticMethod)
+        }
+
+        return null
     }
 
     private fun findJvmBinaryClassAndLoadMemberAnnotations(
