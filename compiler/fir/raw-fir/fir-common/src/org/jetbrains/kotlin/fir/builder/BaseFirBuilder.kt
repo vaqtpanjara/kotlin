@@ -710,15 +710,20 @@ abstract class BaseFirBuilder<T>(val baseSession: FirSession, val context: Conte
             // Refer to (IR utils or FIR backend) DataClassMembersGenerator for generating equals, hashCode, and toString
         }
 
-        private fun generateComponentAccess(parameterSource: FirSourceElement?, firProperty: FirProperty) =
+        private fun generateComponentAccess(
+            parameterSource: FirSourceElement?,
+            firProperty: FirProperty,
+            classTypeRefWithCorrectSourceKind: FirTypeRef,
+            firPropertyReturnTypeRefWithCorrectSourceKind: FirTypeRef
+        ) =
             buildQualifiedAccessExpression {
                 source = parameterSource
-                typeRef = firProperty.returnTypeRef
+                typeRef = firPropertyReturnTypeRefWithCorrectSourceKind
                 dispatchReceiver = buildThisReceiverExpression {
                     calleeReference = buildImplicitThisReference {
                         boundSymbol = classBuilder.symbol
                     }
-                    typeRef = classTypeRef
+                    typeRef = classTypeRefWithCorrectSourceKind
                 }
                 calleeReference = buildResolvedNamedReference {
                     source = parameterSource
@@ -755,7 +760,8 @@ abstract class BaseFirBuilder<T>(val baseSession: FirSession, val context: Conte
         private fun generateCopyFunction() {
             classBuilder.addDeclaration(
                 buildSimpleFunction {
-                    source = this@DataClassMembersGenerator.source.toFirSourceElement()
+                    val classTypeRef = classTypeRef.copyWithNewSourceKind(FirFakeSourceElementKind.DataClassGeneratedMembers)
+                    source = this@DataClassMembersGenerator.source.toFirSourceElement(FirFakeSourceElementKind.DataClassGeneratedMembers)
                     session = this@DataClassMembersGenerator.session
                     origin = FirDeclarationOrigin.Source
                     returnTypeRef = classTypeRef
@@ -764,7 +770,9 @@ abstract class BaseFirBuilder<T>(val baseSession: FirSession, val context: Conte
                     symbol = FirNamedFunctionSymbol(CallableId(packageFqName, classFqName, copyName))
                     for ((ktParameter, firProperty) in zippedParameters) {
                         val propertyName = firProperty.name
-                        val parameterSource = ktParameter?.toFirSourceElement()
+                        val parameterSource = ktParameter?.toFirSourceElement(FirFakeSourceElementKind.DataClassGeneratedMembers)
+                        val propertyReturnTypeRef =
+                            firProperty.returnTypeRef.copyWithNewSourceKind(FirFakeSourceElementKind.DataClassGeneratedMembers)
                         valueParameters += buildValueParameter {
                             source = parameterSource
                             session = this@DataClassMembersGenerator.session
@@ -772,7 +780,7 @@ abstract class BaseFirBuilder<T>(val baseSession: FirSession, val context: Conte
                             returnTypeRef = propertyReturnTypeRef
                             name = propertyName
                             symbol = FirVariableSymbol(propertyName)
-                            defaultValue = generateComponentAccess(parameterSource, firProperty)
+                            defaultValue = generateComponentAccess(parameterSource, firProperty, propertyReturnTypeRef, classTypeRef)
                             isCrossinline = false
                             isNoinline = false
                             isVararg = false
