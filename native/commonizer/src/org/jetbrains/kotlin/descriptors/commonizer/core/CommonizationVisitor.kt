@@ -10,7 +10,8 @@ import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.*
 import org.jetbrains.kotlin.descriptors.commonizer.utils.CommonizedGroupMap
 
 internal class CommonizationVisitor(
-    private val root: CirRootNode
+    private val root: CirRootNode,
+    private val round: Round
 ) : CirNodeVisitor<Unit, Unit> {
     override fun visitRootNode(node: CirRootNode, data: Unit) {
         check(node === root)
@@ -80,7 +81,7 @@ internal class CommonizationVisitor(
             // companion object should have the same FQ name for each target class, then it could be set to common class
             val companionObjectFqName = node.targetDeclarations.mapTo(HashSet()) { it!!.companion }.singleOrNull()
             if (companionObjectFqName != null) {
-                val companionObjectNode = root.cache.classes[companionObjectFqName]
+                val companionObjectNode = round.nodesCache.getClassNode(companionObjectFqName)
                     ?: error("Can't find companion object with FQ name $companionObjectFqName")
 
                 if (companionObjectNode.commonDeclaration() != null) {
@@ -98,7 +99,7 @@ internal class CommonizationVisitor(
             }
 
             for ((_, supertypesGroup) in supertypesMap) {
-                val commonSupertype = commonize(supertypesGroup, TypeCommonizer(root.cache))
+                val commonSupertype = commonize(supertypesGroup, TypeCommonizer(round.classifiersCache))
                 if (commonSupertype != null)
                     commonClass.supertypes.add(commonSupertype)
             }

@@ -9,12 +9,11 @@ import org.jetbrains.kotlin.descriptors.commonizer.cir.CirFlexibleType
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirSimpleType
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirSimpleTypeKind
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirType
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirClassifiersCache
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirNode
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirCommonizedClassifiersCache
 import org.jetbrains.kotlin.descriptors.commonizer.utils.isUnderStandardKotlinPackages
 import org.jetbrains.kotlin.types.AbstractStrictEqualityTypeChecker
 
-class TypeCommonizer(private val cache: CirClassifiersCache) : AbstractStandardCommonizer<CirType, CirType>() {
+class TypeCommonizer(private val classifiersCache: CirCommonizedClassifiersCache) : AbstractStandardCommonizer<CirType, CirType>() {
     private lateinit var temp: CirType
 
     override fun commonizationResult() = temp
@@ -23,22 +22,22 @@ class TypeCommonizer(private val cache: CirClassifiersCache) : AbstractStandardC
         temp = first
     }
 
-    override fun doCommonizeWith(next: CirType) = areTypesEqual(cache, temp, next)
+    override fun doCommonizeWith(next: CirType) = areTypesEqual(classifiersCache, temp, next)
 }
 
 /**
  * See also [AbstractStrictEqualityTypeChecker].
  */
 @Suppress("IntroduceWhenSubject")
-internal fun areTypesEqual(cache: CirClassifiersCache, a: CirType, b: CirType): Boolean = when {
-    a is CirSimpleType -> (b is CirSimpleType) && areSimpleTypesEqual(cache, a, b)
+internal fun areTypesEqual(classifiersCache: CirCommonizedClassifiersCache, a: CirType, b: CirType): Boolean = when {
+    a is CirSimpleType -> (b is CirSimpleType) && areSimpleTypesEqual(classifiersCache, a, b)
     a is CirFlexibleType -> (b is CirFlexibleType)
-            && areSimpleTypesEqual(cache, a.lowerBound, b.lowerBound)
-            && areSimpleTypesEqual(cache, a.upperBound, b.upperBound)
+            && areSimpleTypesEqual(classifiersCache, a.lowerBound, b.lowerBound)
+            && areSimpleTypesEqual(classifiersCache, a.upperBound, b.upperBound)
     else -> false
 }
 
-private fun areSimpleTypesEqual(cache: CirClassifiersCache, a: CirSimpleType, b: CirSimpleType): Boolean {
+private fun areSimpleTypesEqual(classifiersCache: CirCommonizedClassifiersCache, a: CirSimpleType, b: CirSimpleType): Boolean {
     if (a !== b
         && (a.arguments.size != b.arguments.size
                 || a.isMarkedNullable != b.isMarkedNullable
@@ -54,8 +53,8 @@ private fun areSimpleTypesEqual(cache: CirClassifiersCache, a: CirSimpleType, b:
 
     fun descriptorsCanBeCommonizedThemselves() =
         a.kind == b.kind && when (a.kind) {
-            CirSimpleTypeKind.CLASS -> cache.classes[a.fqName].canBeCommonized()
-            CirSimpleTypeKind.TYPE_ALIAS -> cache.typeAliases[a.fqName].canBeCommonized()
+            CirSimpleTypeKind.CLASS -> classifiersCache.hasCommonizedClass(a.fqName)
+            CirSimpleTypeKind.TYPE_ALIAS -> classifiersCache.hasCommonizedTypeAlias(a.fqName)
             CirSimpleTypeKind.TYPE_PARAMETER -> {
                 // Real type parameter commonization is performed in TypeParameterCommonizer.
                 // Here it is enough to check that FQ names are equal (which is already done above).
@@ -82,21 +81,10 @@ private fun areSimpleTypesEqual(cache: CirClassifiersCache, a: CirSimpleType, b:
             if (aArg.projectionKind != bArg.projectionKind)
                 return false
 
-            if (!areTypesEqual(cache, aArg.type, bArg.type))
+            if (!areTypesEqual(classifiersCache, aArg.type, bArg.type))
                 return false
         }
     }
 
     return true
 }
-
-@Suppress("NOTHING_TO_INLINE")
-private inline fun CirNode<*, *>?.canBeCommonized() =
-    if (this == null) {
-        // No node means that the class or type alias was not subject for commonization at all, probably it lays
-        // not in commonized module descriptors but somewhere in their dependencies.
-        true
-    } else {
-        // If entry is present, then contents (common declaration) should not be null.
-        commonDeclaration() != null
-    }

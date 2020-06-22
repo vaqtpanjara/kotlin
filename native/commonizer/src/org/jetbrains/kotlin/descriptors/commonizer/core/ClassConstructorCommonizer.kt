@@ -10,14 +10,16 @@ import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirClassConstructor
 import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.CirClassConstructorFactory
 import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.CirContainingClassDetailsFactory
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirClassifiersCache
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirCommonizedClassifiersCache
 
-class ClassConstructorCommonizer(cache: CirClassifiersCache) : AbstractStandardCommonizer<CirClassConstructor, CirClassConstructor>() {
+class ClassConstructorCommonizer(classifiersCache: CirCommonizedClassifiersCache) :
+    AbstractStandardCommonizer<CirClassConstructor, CirClassConstructor>() {
+
     private var isPrimary = false
     private lateinit var kind: CallableMemberDescriptor.Kind
     private val visibility = VisibilityCommonizer.equalizing()
-    private val typeParameters = TypeParameterListCommonizer(cache)
-    private val valueParameters = ValueParameterListCommonizer(cache)
+    private val typeParameters = TypeParameterListCommonizer(classifiersCache)
+    private val valueParameters = ValueParameterListCommonizer(classifiersCache)
     private var hasStableParameterNames = true
     private var hasSynthesizedParameterNames = false
 

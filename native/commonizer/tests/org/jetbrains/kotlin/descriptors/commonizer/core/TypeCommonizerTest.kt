@@ -11,9 +11,7 @@ import org.jetbrains.kotlin.descriptors.commonizer.cir.CirType
 import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.CirClassFactory
 import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.CirTypeAliasFactory
 import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.CirTypeFactory
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirRootNode.CirClassifiersCacheImpl
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.buildClassNode
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.buildTypeAliasNode
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.*
 import org.jetbrains.kotlin.descriptors.commonizer.utils.mockClassType
 import org.jetbrains.kotlin.descriptors.commonizer.utils.mockTAType
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
@@ -25,11 +23,16 @@ import org.junit.Test
 
 class TypeCommonizerTest : AbstractCommonizerTest<CirType, CirType>() {
 
-    private lateinit var cache: CirClassifiersCacheImpl
+    private lateinit var classifiersCache: CirCommonizedClassifiersCache
+    private lateinit var nodesCache: CirClassifierNodesCache
+    private lateinit var nodesCacheW: CirClassifierNodesCacheW
 
     @Before
     fun initialize() {
-        cache = CirClassifiersCacheImpl() // reset cache
+        val cacheImpl = CirClassifierNodesCacheImpl(CirCommonizedClassifiersCacheImpl()) // reset cache
+        classifiersCache = cacheImpl
+        nodesCache = cacheImpl
+        nodesCacheW = cacheImpl
     }
 
     @Test
@@ -460,28 +463,27 @@ class TypeCommonizerTest : AbstractCommonizerTest<CirType, CirType>() {
             when (descriptor) {
                 is ClassDescriptor -> {
                     val fqName = descriptor.fqNameSafe
-                    val node = cache.classes.getOrPut(fqName) {
-                        buildClassNode(
+                    val node = nodesCache.getClassNode(fqName)
+                        ?: buildClassNode(
                             storageManager = LockBasedStorageManager.NO_LOCKS,
                             size = variants.size,
-                            cacheRW = cache,
+                            classifiersCache = classifiersCache,
+                            nodesCacheW = nodesCacheW,
                             parentCommonDeclaration = null,
                             fqName = fqName
                         )
-                    }
                     node.targetDeclarations[index] = CirClassFactory.create(descriptor)
                 }
                 is TypeAliasDescriptor -> {
                     val fqName = descriptor.fqNameSafe
-                    val node = cache.typeAliases.getOrPut(fqName) {
-                        buildTypeAliasNode(
+                    val node = nodesCache.getTypeAliasNode(fqName)
+                        ?: buildTypeAliasNode(
                             storageManager = LockBasedStorageManager.NO_LOCKS,
                             size = variants.size,
-                            cacheRW = cache,
+                            classifiersCache = classifiersCache,
+                            nodesCacheW = nodesCacheW,
                             fqName = fqName
-
                         )
-                    }
                     node.targetDeclarations[index] = CirTypeAliasFactory.create(descriptor)
 
                     recurse(descriptor.underlyingType, index) // expand underlying types recursively
@@ -513,7 +515,7 @@ class TypeCommonizerTest : AbstractCommonizerTest<CirType, CirType>() {
         )
     }
 
-    override fun createCommonizer() = TypeCommonizer(cache)
+    override fun createCommonizer() = TypeCommonizer(classifiersCache)
 
-    override fun isEqual(a: CirType?, b: CirType?) = (a === b) || (a != null && b != null && areTypesEqual(cache, a, b))
+    override fun isEqual(a: CirType?, b: CirType?) = (a === b) || (a != null && b != null && areTypesEqual(classifiersCache, a, b))
 }

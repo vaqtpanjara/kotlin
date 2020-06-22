@@ -7,11 +7,11 @@ package org.jetbrains.kotlin.descriptors.commonizer.builder
 
 import org.jetbrains.kotlin.builtins.KotlinBuiltIns
 import org.jetbrains.kotlin.descriptors.*
-import org.jetbrains.kotlin.descriptors.commonizer.Parameters
 import org.jetbrains.kotlin.descriptors.commonizer.Target
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirNode.Companion.dimension
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirNode.Companion.indexOfCommon
 import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirRootNode
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.Round
 import org.jetbrains.kotlin.descriptors.commonizer.stats.StatsCollector
 import org.jetbrains.kotlin.descriptors.commonizer.utils.CommonizedGroup
 import org.jetbrains.kotlin.descriptors.commonizer.utils.CommonizedGroupMap
@@ -165,10 +165,7 @@ class TargetDeclarationsBuilderComponents(
     }
 }
 
-fun CirRootNode.createGlobalBuilderComponents(
-    storageManager: StorageManager,
-    parameters: Parameters
-): GlobalDeclarationsBuilderComponents {
+fun CirRootNode.createGlobalBuilderComponents(round: Round): GlobalDeclarationsBuilderComponents {
     val cache = DeclarationsBuilderCache(dimension)
 
     val targetContexts = (0 until dimension).map { index ->
@@ -181,7 +178,7 @@ fun CirRootNode.createGlobalBuilderComponents(
         }
 
         TargetDeclarationsBuilderComponents(
-            storageManager = storageManager,
+            storageManager = round.session.storageManager,
             target = root.target,
             builtIns = builtIns,
             isCommon = isCommon,
@@ -190,7 +187,7 @@ fun CirRootNode.createGlobalBuilderComponents(
         )
     }
 
-    return GlobalDeclarationsBuilderComponents(storageManager, targetContexts, cache, parameters.statsCollector)
+    return GlobalDeclarationsBuilderComponents(round.session.storageManager, targetContexts, cache, round.session.parameters.statsCollector)
 }
 
 interface TypeParameterResolver {

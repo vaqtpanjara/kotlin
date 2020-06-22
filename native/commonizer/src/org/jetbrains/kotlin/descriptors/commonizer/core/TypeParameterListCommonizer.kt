@@ -6,8 +6,9 @@
 package org.jetbrains.kotlin.descriptors.commonizer.core
 
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirTypeParameter
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirClassifiersCache
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirCommonizedClassifiersCache
 
-class TypeParameterListCommonizer(cache: CirClassifiersCache) : AbstractListCommonizer<CirTypeParameter, CirTypeParameter>(
-    singleElementCommonizerFactory = { TypeParameterCommonizer(cache) }
-)
+class TypeParameterListCommonizer(classifiersCache: CirCommonizedClassifiersCache) :
+    AbstractListCommonizer<CirTypeParameter, CirTypeParameter>(
+        singleElementCommonizerFactory = { TypeParameterCommonizer(classifiersCache) }
+    )

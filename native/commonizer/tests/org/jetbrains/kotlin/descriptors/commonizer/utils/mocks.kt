@@ -10,9 +10,7 @@ import org.jetbrains.kotlin.descriptors.*
 import org.jetbrains.kotlin.descriptors.annotations.Annotations
 import org.jetbrains.kotlin.descriptors.commonizer.InputTarget
 import org.jetbrains.kotlin.descriptors.commonizer.builder.*
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirClassNode
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirClassifiersCache
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirTypeAliasNode
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirCommonizedClassifiersCache
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.parentOrNull
 import org.jetbrains.kotlin.resolve.scopes.MemberScope
@@ -114,7 +112,7 @@ private fun createPackageFragmentForClassifier(classifierFqName: FqName): Packag
         override fun toString() = "package $name"
     }
 
-internal val EMPTY_CLASSIFIERS_CACHE = object : CirClassifiersCache {
-    override val classes: Map<FqName, CirClassNode> get() = emptyMap()
-    override val typeAliases: Map<FqName, CirTypeAliasNode> get() = emptyMap()
+internal val ALWAYS_YES_CLASSIFIERS_CACHE = object : CirCommonizedClassifiersCache {
+    override fun hasCommonizedClass(fqName: FqName) = true
+    override fun hasCommonizedTypeAlias(fqName: FqName) = true
 }

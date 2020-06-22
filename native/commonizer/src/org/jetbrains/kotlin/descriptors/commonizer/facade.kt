@@ -10,31 +10,31 @@ import org.jetbrains.kotlin.descriptors.commonizer.builder.DeclarationsBuilderVi
 import org.jetbrains.kotlin.descriptors.commonizer.builder.DeclarationsBuilderVisitor2
 import org.jetbrains.kotlin.descriptors.commonizer.builder.createGlobalBuilderComponents
 import org.jetbrains.kotlin.descriptors.commonizer.core.CommonizationVisitor
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirTreeMerger
-import org.jetbrains.kotlin.storage.LockBasedStorageManager
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.*
 
 fun runCommonization(parameters: Parameters): Result {
     if (!parameters.hasAnythingToCommonize())
         return NothingToCommonize
 
-    val storageManager = LockBasedStorageManager("Declaration descriptors commonization")
+    val session = Session(parameters)
+    val round = Round(session)
 
     checkpoint("START")
 
     // build merged tree:
-    val mergedTree = CirTreeMerger(storageManager, parameters).merge()
+    val mergedTree = CirTreeMerger(round).merge()
 
     checkpoint("MERGED")
 //    pause()
 
     // commonize:
-    mergedTree.accept(CommonizationVisitor(mergedTree), Unit)
+    mergedTree.accept(CommonizationVisitor(mergedTree, round), Unit)
     parameters.progressLogger?.invoke("Commonized declarations")
 
     checkpoint("COMMONIZED")
 
     // build resulting descriptors:
-    val components = mergedTree.createGlobalBuilderComponents(storageManager, parameters)
+    val components = mergedTree.createGlobalBuilderComponents(round)
     mergedTree.accept(DeclarationsBuilderVisitor1(components), emptyList())
     mergedTree.accept(DeclarationsBuilderVisitor2(components), emptyList())
 

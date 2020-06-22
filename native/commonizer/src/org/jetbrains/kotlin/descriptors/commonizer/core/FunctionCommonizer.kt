@@ -7,12 +7,14 @@ package org.jetbrains.kotlin.descriptors.commonizer.core
 
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirFunction
 import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.CirFunctionFactory
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirClassifiersCache
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirCommonizedClassifiersCache
 
-class FunctionCommonizer(cache: CirClassifiersCache) : AbstractFunctionOrPropertyCommonizer<CirFunction>(cache) {
+class FunctionCommonizer(classifiersCache: CirCommonizedClassifiersCache) :
+    AbstractFunctionOrPropertyCommonizer<CirFunction>(classifiersCache) {
+
     private val annotations = AnnotationsCommonizer()
     private val modifiers = FunctionModifiersCommonizer()
-    private val valueParameters = ValueParameterListCommonizer(cache)
+    private val valueParameters = ValueParameterListCommonizer(classifiersCache)
     private var hasStableParameterNames = true
     private var hasSynthesizedParameterNames = false
 

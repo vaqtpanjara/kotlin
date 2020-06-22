@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.descriptors.Modality
 import org.jetbrains.kotlin.descriptors.commonizer.cir.*
 import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.CirClassFactory
 import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.CirTypeAliasFactory
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirClassifiersCache
+import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirCommonizedClassifiersCache
 import org.jetbrains.kotlin.name.Name
 
 /**
@@ -20,8 +20,8 @@ import org.jetbrains.kotlin.name.Name
  * Secondary (backup) branch:
  * - Produce an "expect class" for "common" fragment and the corresponding "actual typealias" declarations for each platform fragment.
  */
-class TypeAliasCommonizer(cache: CirClassifiersCache) : AbstractStandardCommonizer<CirTypeAlias, CirClassifier>() {
-    private val main = TypeAliasLiftingUpCommonizer(cache)
+class TypeAliasCommonizer(classifiersCache: CirCommonizedClassifiersCache) : AbstractStandardCommonizer<CirTypeAlias, CirClassifier>() {
+    private val main = TypeAliasLiftingUpCommonizer(classifiersCache)
     private val secondary = TypeAliasExpectClassCommonizer()
 
     override fun commonizationResult(): CirClassifier = main.resultOrNull ?: secondary.result
@@ -38,10 +38,12 @@ class TypeAliasCommonizer(cache: CirClassifiersCache) : AbstractStandardCommoniz
     }
 }
 
-private class TypeAliasLiftingUpCommonizer(cache: CirClassifiersCache) : AbstractStandardCommonizer<CirTypeAlias, CirTypeAlias>() {
+private class TypeAliasLiftingUpCommonizer(classifiersCache: CirCommonizedClassifiersCache) :
+    AbstractStandardCommonizer<CirTypeAlias, CirTypeAlias>() {
+
     private lateinit var name: Name
-    private val typeParameters = TypeParameterListCommonizer(cache)
-    private val underlyingType = TypeCommonizer(cache)
+    private val typeParameters = TypeParameterListCommonizer(classifiersCache)
+    private val underlyingType = TypeCommonizer(classifiersCache)
     private lateinit var expandedType: CirSimpleType
     private val visibility = VisibilityCommonizer.lowering()
 

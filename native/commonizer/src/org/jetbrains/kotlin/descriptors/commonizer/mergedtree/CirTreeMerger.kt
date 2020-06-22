@@ -6,30 +6,25 @@
 package org.jetbrains.kotlin.descriptors.commonizer.mergedtree
 
 import org.jetbrains.kotlin.descriptors.*
-import org.jetbrains.kotlin.descriptors.commonizer.Parameters
 import org.jetbrains.kotlin.descriptors.commonizer.TargetProvider
 import org.jetbrains.kotlin.descriptors.commonizer.cir.CirClass
 import org.jetbrains.kotlin.descriptors.commonizer.cir.factory.*
-import org.jetbrains.kotlin.descriptors.commonizer.mergedtree.CirRootNode.CirClassifiersCacheImpl
 import org.jetbrains.kotlin.descriptors.commonizer.utils.intern
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.descriptorUtil.fqNameSafe
 import org.jetbrains.kotlin.resolve.scopes.MemberScope
 import org.jetbrains.kotlin.storage.NullableLazyValue
-import org.jetbrains.kotlin.storage.StorageManager
 
-class CirTreeMerger(
-    private val storageManager: StorageManager,
-    private val parameters: Parameters
-) {
-    private val size = parameters.targetProviders.size
-    private lateinit var cacheRW: CirClassifiersCacheImpl
+class CirTreeMerger(private val round: Round) {
+    // just shortcuts
+    private val storageManager = round.session.storageManager
+    private val size = round.session.parameters.targetProviders.size
 
     fun merge(): CirRootNode {
         val rootNode: CirRootNode = buildRootNode(storageManager, size)
-        cacheRW = rootNode.cache
 
+        val parameters = round.session.parameters
         parameters.targetProviders.forEachIndexed { targetIndex, targetProvider ->
             processTarget(rootNode, targetIndex, targetProvider)
             parameters.progressLogger?.invoke("Loaded declarations for [${targetProvider.target.name}]")
@@ -108,7 +103,12 @@ class CirTreeMerger(
         parentCommonDeclaration: NullableLazyValue<*>?
     ) {
         val propertyNode: CirPropertyNode = properties.getOrPut(PropertyApproximationKey(propertyDescriptor)) {
-            buildPropertyNode(storageManager, size, cacheRW, parentCommonDeclaration)
+            buildPropertyNode(
+                storageManager = storageManager,
+                size = size,
+                classifiersCache = round.classifiersCache,
+                parentCommonDeclaration = parentCommonDeclaration
+            )
         }
         propertyNode.targetDeclarations[targetIndex] = CirPropertyFactory.create(propertyDescriptor)
     }
@@ -120,7 +120,12 @@ class CirTreeMerger(
         parentCommonDeclaration: NullableLazyValue<*>?
     ) {
         val functionNode: CirFunctionNode = functions.getOrPut(FunctionApproximationKey(functionDescriptor)) {
-            buildFunctionNode(storageManager, size, cacheRW, parentCommonDeclaration)
+            buildFunctionNode(
+                storageManager = storageManager,
+                size = size,
+                classifiersCache = round.classifiersCache,
+                parentCommonDeclaration = parentCommonDeclaration
+            )
         }
         functionNode.targetDeclarations[targetIndex] = CirFunctionFactory.create(functionDescriptor)
     }
@@ -132,7 +137,14 @@ class CirTreeMerger(
         parentCommonDeclaration: NullableLazyValue<*>?
     ) {
         val classNode: CirClassNode = classes.getOrPut(classDescriptor.name.intern()) {
-            buildClassNode(storageManager, size, cacheRW, parentCommonDeclaration, classDescriptor.fqNameSafe.intern())
+            buildClassNode(
+                storageManager = storageManager,
+                size = size,
+                classifiersCache = round.classifiersCache,
+                nodesCacheW = round.nodesCacheW,
+                parentCommonDeclaration = parentCommonDeclaration,
+                fqName = classDescriptor.fqNameSafe.intern()
+            )
         }
         classNode.targetDeclarations[targetIndex] = CirClassFactory.create(classDescriptor)
 
@@ -159,7 +171,12 @@ class CirTreeMerger(
         parentCommonDeclaration: NullableLazyValue<*>?
     ) {
         val constructorNode: CirClassConstructorNode = constructors.getOrPut(ConstructorApproximationKey(constructorDescriptor)) {
-            buildClassConstructorNode(storageManager, size, cacheRW, parentCommonDeclaration)
+            buildClassConstructorNode(
+                storageManager = storageManager,
+                size = size,
+                classifiersCache = round.classifiersCache,
+                parentCommonDeclaration = parentCommonDeclaration
+            )
         }
         constructorNode.targetDeclarations[targetIndex] = CirClassConstructorFactory.create(constructorDescriptor)
     }
@@ -170,7 +187,13 @@ class CirTreeMerger(
         typeAliasDescriptor: TypeAliasDescriptor
     ) {
         val typeAliasNode: CirTypeAliasNode = typeAliases.getOrPut(typeAliasDescriptor.name.intern()) {
-            buildTypeAliasNode(storageManager, size, cacheRW, typeAliasDescriptor.fqNameSafe.intern())
+            buildTypeAliasNode(
+                storageManager = storageManager,
+                size = size,
+                classifiersCache = round.classifiersCache,
+                nodesCacheW = round.nodesCacheW,
+                fqName = typeAliasDescriptor.fqNameSafe.intern()
+            )
         }
         typeAliasNode.targetDeclarations[targetIndex] = CirTypeAliasFactory.create(typeAliasDescriptor)
     }
