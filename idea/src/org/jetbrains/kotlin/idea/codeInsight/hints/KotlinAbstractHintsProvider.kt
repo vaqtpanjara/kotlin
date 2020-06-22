@@ -15,6 +15,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import org.jetbrains.kotlin.idea.parameterInfo.TYPE_INFO_PREFIX
 
+//todo: Tests from idea/tests/org/jetbrains/kotlin/idea/parameterInfo need to be revisited
 @Suppress("UnstableApiUsage")
 abstract class KotlinAbstractHintsProvider<T : Any> : InlayHintsProvider<T> {
 
