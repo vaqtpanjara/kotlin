@@ -1,4 +1,4 @@
-:kotlin-ultimate:ide:android-studio-native:test
+:kotlin-ultimate:ide:android-studio-native:test,AS40
 :idea:idea-gradle:test
 :idea:test
 :compiler:test

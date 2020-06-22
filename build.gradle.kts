@@ -507,30 +507,24 @@ gradle.taskGraph.whenReady {
             ZipEntryCompression.STORED
     }
 
-    if(allTasks.filterIsInstance<AggregateTest>().isNotEmpty()) {
-        val patterns = mutableMapOf<String, List<String>>()
+    if (allTasks.filterIsInstance<AggregateTest>().isNotEmpty()) {
+        val patterns = mutableMapOf<String, MutableList<String>>()
 
         allTasks.filterIsInstance<AggregateTest>().forEach { aggregateTask ->
-            patterns.putAll(File(aggregateTask.testPatternPath!!)
-                                .readLines()
-                                .asSequence()
-                                .map { it.trim().split(',') }
-                                .filter { it.isNotEmpty() }
-                                .drop(1)
-                                .groupBy({ it[1].trim() }, { it[0].trim() })
-            )
+            File(aggregateTask.testPatternPath)
+                .readLines()
+                .asSequence()
+                .map { it.trim().split(',').map { it.trim() } }
+                .filter { it.isNotEmpty() }
+                .drop(1).forEach {
+                    if (patterns.containsKey(it[1])) patterns[it[1]]?.add(it[0]) else patterns[it[1]] = mutableListOf(it[0])
+                }
         }
-
-        println(patterns["include"])
-        println(patterns["exclude"])
-
         allTasks.filterIsInstance<Test>().forEach { testTask ->
             patterns["exclude"]?.let { testTask.exclude(it) }
             patterns["include"]?.let { testTask.include(it) }
             testTask.filter { isFailOnNoMatchingTests = false }
-            testTask.testLogging {
-                events("passed", "skipped", "failed")
-            }
+            testTask.outputs.upToDateWhen { false } // Run tests every time
         }
     }
 }
@@ -834,20 +828,11 @@ tasks {
         }
     }
 
-    register("kmmTest", AggregateTest::class) {
+    register("debugTask", AggregateTest::class) {
         testTasksPath = "tests/mpp/test-tasks.csv"
         testPatternPath = "tests/mpp/kmm-tests.csv"
 
-        classpath = files("stub")
-        testClassesDirs = files("stub")
-        binaryResultsDirectory.convention(rootProject.layout.buildDirectory.dir("test"))
-
-        File(testTasksPath!!)
-            .readLines()
-            .filter { it.isNotEmpty() && !it.startsWith("//")}
-            .forEach {
-                dependsOn(it)
-            }
+        configure()
     }
 
     register("test") {

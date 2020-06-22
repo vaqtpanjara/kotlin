@@ -5,14 +5,36 @@
 
 import org.gradle.api.tasks.*
 import org.gradle.api.tasks.testing.Test
+import java.io.File
 
-open class AggregateTest : Test() {
+
+open class AggregateTest : Test() { // Inherit from Test to see test results in IDEA Test viewer
+    @Input
+    lateinit var testTasksPath: String
 
     @Input
-    var testTasksPath: String? = null
+    lateinit var testPatternPath: String
 
-    @Input
-    var testPatternPath: String? = null
+    // Stubs to avoid exceptions when initializing a base 'Test' class
+    init {
+        binaryResultsDirectory.convention(project.layout.buildDirectory.dir("stub"))
+        classpath = project.files("stub")
+        testClassesDirs = project.files("stub")
+    }
+
+    fun configure() {
+        val currentIde = IdeVersionConfigurator.currentIde.toString()
+        File(testTasksPath)
+            .readLines()
+            .filter { testTask -> testTask.isNotEmpty() && !testTask.startsWith("//") }
+            .forEach { testTask ->
+                if (testTask.split(",").size == 1 ||
+                    testTask.split(",").any { it.trim() in currentIde }
+                ) {
+                    dependsOn(testTask.split(",")[0])
+                }
+            }
+    }
 
     @Override
     @TaskAction
