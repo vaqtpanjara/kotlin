@@ -836,7 +836,7 @@ tasks {
 
     register("kmmTest", AggregateTest::class) {
         testTasksPath = "tests/mpp/test-tasks.csv"
-        testPatternPath = "tests/mpp/test-tasks.csv"
+        testPatternPath = "tests/mpp/kmm-tests.csv"
 
         classpath = files("stub")
         testClassesDirs = files("stub")
