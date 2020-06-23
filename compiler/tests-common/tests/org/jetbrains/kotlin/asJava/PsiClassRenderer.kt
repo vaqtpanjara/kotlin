@@ -179,9 +179,22 @@ object PsiClassRenderer {
 
     private fun PsiModifierListOwner.renderModifiers(typeIfApplicable: PsiType? = null): String {
         val annotationsBuffer = mutableListOf<String>()
+        var nullableIsRendered = false
+        var notNullIsRendered = false
+
         for (annotation in annotations) {
             if (annotation is KtLightNullabilityAnnotation<*> && skipRenderingNullability(typeIfApplicable)) {
                 continue
+            }
+
+            if (annotation.qualifiedName == "org.jetbrains.annotations.Nullable") {
+                if (nullableIsRendered) continue
+                nullableIsRendered = true
+            }
+
+            if (annotation.qualifiedName == "org.jetbrains.annotations.NotNull") {
+                if (notNullIsRendered) continue
+                notNullIsRendered = true
             }
 
             val renderedAnnotation = annotation.renderAnnotation()
@@ -212,6 +225,6 @@ object PsiClassRenderer {
     }
 
     private fun PsiModifierListOwner.skipRenderingNullability(typeIfApplicable: PsiType?) =
-        isPrimitiveOrNonExisting(typeIfApplicable) || isPrivateOrParameterInPrivateMethod()
+        isPrimitiveOrNonExisting(typeIfApplicable)// || isPrivateOrParameterInPrivateMethod()
 
 }
