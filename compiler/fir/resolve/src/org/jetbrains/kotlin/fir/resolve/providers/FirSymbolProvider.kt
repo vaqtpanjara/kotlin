@@ -59,6 +59,8 @@ abstract class FirSymbolProvider : FirSessionComponent {
     open fun getNestedClassesNamesInClass(classId: ClassId): Set<Name> = emptySet()
 
     abstract fun getPackage(fqName: FqName): FqName? // TODO: Replace to symbol sometime
+
+    open fun getAllCallableNamesInPackage(): Set<Name> = emptySet()
 }
 
 fun FirSession.getNestedClassifierScope(lookupTag: ConeClassLikeLookupTag): FirScope? =
