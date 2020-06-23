@@ -1,0 +1,1 @@
+val x<hint text=": ArrayList<Int>" /> = arrayListOf(1)

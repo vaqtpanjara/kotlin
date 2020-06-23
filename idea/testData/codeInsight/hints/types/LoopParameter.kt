@@ -1,0 +1,1 @@
+fun foo() { for (x<hint text=": String" /> in listOf("a")) { } }

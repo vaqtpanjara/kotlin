@@ -127,7 +127,8 @@ class InlayTypeHintsTest : KotlinLightCodeInsightFixtureTestCase() {
             """
         )
     }
-
+    stopped here
+//todo: extract all cases into files
     fun testEnumEntry() {
         checkPropertyHint(
             """
