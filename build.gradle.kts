@@ -511,20 +511,26 @@ gradle.taskGraph.whenReady {
         val patterns = mutableMapOf<String, MutableList<String>>()
 
         allTasks.filterIsInstance<AggregateTest>().forEach { aggregateTask ->
-            File(aggregateTask.testPatternPath)
-                .readLines()
-                .asSequence()
-                .map { it.trim().split(',').map { it.trim() } }
-                .filter { it.isNotEmpty() }
-                .drop(1).forEach {
-                    if (patterns.containsKey(it[1])) patterns[it[1]]?.add(it[0]) else patterns[it[1]] = mutableListOf(it[0])
-                }
+            if (File(aggregateTask.testPatternPath).exists()) {
+                File(aggregateTask.testPatternPath)
+                    .readLines()
+                    .asSequence()
+                    .map { pattern -> pattern.trim().split(',').map { it.trim() } }
+                    .filter { it.isNotEmpty() }
+                    .drop(1).forEach {
+                        if (patterns.containsKey(it[1])) patterns[it[1]]?.add(it[0]) else patterns[it[1]] = mutableListOf(it[0])
+                    }
+            }
         }
         allTasks.filterIsInstance<Test>().forEach { testTask ->
             patterns["exclude"]?.let { testTask.exclude(it) }
             patterns["include"]?.let { testTask.include(it) }
             testTask.filter { isFailOnNoMatchingTests = false }
             testTask.outputs.upToDateWhen { false } // Run tests every time
+        }
+
+        if (!project.gradle.startParameter.taskNames.all { tasks.findByPath(it) is AggregateTest }) {
+            logger.warn("Please, don't use AggregateTest and Default test tasks together. You can get incorrect results.")
         }
     }
 }
@@ -828,7 +834,7 @@ tasks {
         }
     }
 
-    register("debugTask", AggregateTest::class) {
+    register("kmmTest", AggregateTest::class) {
         testTasksPath = "tests/mpp/test-tasks.csv"
         testPatternPath = "tests/mpp/kmm-tests.csv"
 

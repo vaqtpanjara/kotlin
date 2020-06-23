@@ -24,16 +24,18 @@ open class AggregateTest : Test() { // Inherit from Test to see test results in 
 
     fun configure() {
         val currentIde = IdeVersionConfigurator.currentIde.toString()
-        File(testTasksPath)
-            .readLines()
-            .filter { testTask -> testTask.isNotEmpty() && !testTask.startsWith("//") }
-            .forEach { testTask ->
-                if (testTask.split(",").size == 1 ||
-                    testTask.split(",").any { it.trim() in currentIde }
-                ) {
-                    dependsOn(testTask.split(",")[0])
+        if (File(testTasksPath).exists()) {
+            File(testTasksPath)
+                .readLines()
+                .filter { testTask -> testTask.isNotEmpty() && !testTask.startsWith("//") }
+                .forEach { testTask ->
+                    if (testTask.split(",").size == 1 ||
+                        testTask.split(",").any { it.trim() in currentIde }
+                    ) {
+                        dependsOn(testTask.split(",")[0])
+                    }
                 }
-            }
+        }
     }
 
     @Override
