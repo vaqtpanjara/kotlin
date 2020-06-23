@@ -27,6 +27,7 @@ import org.jetbrains.kotlin.descriptors.CallableDescriptor
 import org.jetbrains.kotlin.descriptors.DeclarationDescriptor
 import org.jetbrains.kotlin.descriptors.PackageFragmentDescriptor
 import org.jetbrains.kotlin.idea.KotlinBundle
+import org.jetbrains.kotlin.idea.KotlinFileType
 import org.jetbrains.kotlin.idea.caches.resolve.allowResolveInDispatchThread
 import org.jetbrains.kotlin.idea.caches.resolve.getResolutionFacade
 import org.jetbrains.kotlin.idea.caches.resolve.resolveImportReference
@@ -430,13 +431,20 @@ class KotlinCopyPasteReferenceProcessor : CopyPastePostProcessor<BasicKotlinRefe
             """.trimIndent()
 
         val sourceFileUrl = transferableData.sourceFileUrl
-        val script = sourceFileUrl.endsWith(STD_SCRIPT_EXT)
-        val extension = if (script) STD_SCRIPT_EXT else ".kt"
+        val script = !sourceFileUrl.endsWith(KotlinFileType.EXTENSION)
+        val extension = run {
+            val lastDotIndex = sourceFileUrl.lastIndexOf('.')
+            if (lastDotIndex >= 0 && lastDotIndex + 1 < sourceFileUrl.length) {
+                sourceFileUrl.substring(lastDotIndex + 1)
+            } else {
+                KotlinFileType.EXTENSION
+            }
+        }
 
         val dummyOriginalFile = runReadAction {
             KtPsiFactory(project)
                 .createAnalyzableFile(
-                    "dummy-original$extension",
+                    "dummy-original.$extension",
                     "$dummyOrigFileProlog${transferableData.sourceText}",
                     ctxFile
                 )
