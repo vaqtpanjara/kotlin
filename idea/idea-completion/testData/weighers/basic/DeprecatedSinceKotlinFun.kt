@@ -7,7 +7,7 @@ fun foo2() {}
 
 @Suppress("DEPRECATED_SINCE_KOTLIN_OUTSIDE_KOTLIN_SUBPACKAGE")
 @Deprecated("")
-@DeprecatedSinceKotlin(warningSince = "1.9")
+@DeprecatedSinceKotlin(warningSince = "999.999")
 fun foo3() {}
 
 fun foo4() {}
