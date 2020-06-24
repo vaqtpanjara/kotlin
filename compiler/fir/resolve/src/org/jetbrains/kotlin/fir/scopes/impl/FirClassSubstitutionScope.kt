@@ -145,7 +145,7 @@ class FirClassSubstitutionScope(
             newReceiverType,
             newReturnType,
             newParameterTypes,
-            newTypeParameters as List<FirTypeParameter>,
+            newTypeParameters,
             derivedClassId
         )
     }
@@ -243,14 +243,13 @@ class FirClassSubstitutionScope(
             return original
         }
 
-        @Suppress("UNCHECKED_CAST")
         return createFakeOverrideProperty(
             session,
             member,
             original,
             newReceiverType,
             newReturnType,
-            newTypeParameters as List<FirTypeParameter>,
+            newTypeParameters,
             derivedClassId
         )
     }
@@ -325,7 +324,7 @@ class FirClassSubstitutionScope(
             newReceiverType: ConeKotlinType? = null,
             newReturnType: ConeKotlinType? = null,
             newParameterTypes: List<ConeKotlinType?>? = null,
-            newTypeParameters: List<FirTypeParameter>? = null
+            newTypeParameters: List<FirTypeParameterRef>? = null
         ): FirSimpleFunction {
             // TODO: consider using here some light-weight functions instead of pseudo-real FirMemberFunctionImpl
             // As second alternative, we can invent some light-weight kind of FirRegularClass
@@ -347,7 +346,7 @@ class FirClassSubstitutionScope(
                 // But it fails at org.jetbrains.kotlin.ir.AbstractIrTextTestCase.IrVerifier.elementsAreUniqueChecker
                 // because it shares the same declarations of type parameters between two different two functions
                 if (newTypeParameters != null) {
-                    typeParameters += newTypeParameters
+                    typeParameters += newTypeParameters.filterIsInstance<FirTypeParameter>()
                 }
             }
 
@@ -360,7 +359,7 @@ class FirClassSubstitutionScope(
             newReceiverType: ConeKotlinType? = null,
             newReturnType: ConeKotlinType? = null,
             newParameterTypes: List<ConeKotlinType?>? = null,
-            newTypeParameters: List<FirTypeParameter>? = null,
+            newTypeParameters: List<FirTypeParameterRef>? = null,
             derivedClassId: ClassId? = null
         ): FirNamedFunctionSymbol {
             val symbol = FirNamedFunctionSymbol(
@@ -379,7 +378,7 @@ class FirClassSubstitutionScope(
             baseSymbol: FirPropertySymbol,
             newReceiverType: ConeKotlinType? = null,
             newReturnType: ConeKotlinType? = null,
-            newTypeParameters: List<FirTypeParameter>? = null,
+            newTypeParameters: List<FirTypeParameterRef>? = null,
             derivedClassId: ClassId? = null
         ): FirPropertySymbol {
             val symbol = FirPropertySymbol(
@@ -400,7 +399,7 @@ class FirClassSubstitutionScope(
                 resolvePhase = baseProperty.resolvePhase
                 annotations += baseProperty.annotations
                 if (newTypeParameters != null) {
-                    typeParameters += newTypeParameters
+                    typeParameters += newTypeParameters.filterIsInstance<FirTypeParameter>()
                 }
             }
             return symbol
