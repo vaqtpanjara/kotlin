@@ -40,7 +40,8 @@ class FirClassSubstitutionScope(
     scopeSession: ScopeSession,
     private val substitutor: ConeSubstitutor,
     private val skipPrivateMembers: Boolean,
-    private val derivedClassId: ClassId? = null
+    private val derivedClassId: ClassId? = null,
+    private val makeExpect: Boolean = false
 ) : FirTypeScope() {
 
     private val fakeOverrideFunctions = mutableMapOf<FirFunctionSymbol<*>, FirFunctionSymbol<*>>()
@@ -140,7 +141,8 @@ class FirClassSubstitutionScope(
             newReturnType,
             newParameterTypes,
             newTypeParameters,
-            derivedClassId
+            derivedClassId,
+            makeExpect
         )
     }
 
@@ -158,7 +160,7 @@ class FirClassSubstitutionScope(
         }
         return createFakeOverrideConstructor(
             FirConstructorSymbol(original.callableId, overriddenSymbol = original),
-            session, constructor, newReturnType, newParameterTypes, newTypeParameters
+            session, constructor, newReturnType, newParameterTypes, newTypeParameters, makeExpect
         ).symbol
     }
 
@@ -181,7 +183,8 @@ class FirClassSubstitutionScope(
             newReceiverType,
             newReturnType,
             newTypeParameters,
-            derivedClassId
+            derivedClassId,
+            makeExpect
         )
     }
 
@@ -471,7 +474,8 @@ class FirClassSubstitutionScope(
             baseConstructor: FirConstructor,
             newReturnType: ConeKotlinType? = null,
             newParameterTypes: List<ConeKotlinType?>? = null,
-            newTypeParameters: List<FirTypeParameterRef>? = null
+            newTypeParameters: List<FirTypeParameterRef>? = null,
+            isExpect: Boolean = baseConstructor.isExpect
         ): FirConstructor {
             // TODO: consider using here some light-weight functions instead of pseudo-real FirMemberFunctionImpl
             // As second alternative, we can invent some light-weight kind of FirRegularClass
@@ -481,7 +485,7 @@ class FirClassSubstitutionScope(
                 origin = FirDeclarationOrigin.FakeOverride
                 returnTypeRef = baseConstructor.returnTypeRef.withReplacedReturnType(newReturnType)
                 receiverTypeRef = baseConstructor.receiverTypeRef?.withReplacedConeType(null)
-                status = baseConstructor.status
+                status = baseConstructor.status.withExpect(isExpect)
                 symbol = fakeOverrideSymbol
                 resolvePhase = baseConstructor.resolvePhase
                 configureAnnotationsAndParameters(session, baseConstructor, newParameterTypes)

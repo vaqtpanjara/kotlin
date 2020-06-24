@@ -8,7 +8,9 @@ package org.jetbrains.kotlin.fir.scopes
 import org.jetbrains.kotlin.descriptors.ClassKind
 import org.jetbrains.kotlin.fir.FirSession
 import org.jetbrains.kotlin.fir.declarations.FirClass
+import org.jetbrains.kotlin.fir.declarations.FirRegularClass
 import org.jetbrains.kotlin.fir.declarations.classId
+import org.jetbrains.kotlin.fir.declarations.isExpect
 import org.jetbrains.kotlin.fir.resolve.*
 import org.jetbrains.kotlin.fir.resolve.substitution.ConeSubstitutor
 import org.jetbrains.kotlin.fir.resolve.substitution.substitutorByMap
@@ -51,7 +53,10 @@ class KotlinScopeProvider(
                     if (symbol is FirRegularClassSymbol) {
                         symbol.fir.scope(
                             substitutor(symbol, useSiteSuperType, useSiteSession),
-                            useSiteSession, scopeSession, skipPrivateMembers = true, klass.classId
+                            useSiteSession, scopeSession,
+                            skipPrivateMembers = true,
+                            classId = klass.classId,
+                            isFromExpectClass = (klass as? FirRegularClass)?.isExpect == true
                         ).let {
                             it as? FirTypeScope ?: error("$it is expected to be FirOverrideAwareScope")
                         }
@@ -87,7 +92,7 @@ class KotlinScopeProvider(
 
 
 data class ConeSubstitutionScopeKey(
-    val classId: ClassId?, val substitutor: ConeSubstitutor
+    val classId: ClassId?, val isFromExpectClass: Boolean, val substitutor: ConeSubstitutor
 ) : ScopeSessionKey<FirClass<*>, FirClassSubstitutionScope>()
 
 fun FirClass<*>.unsubstitutedScope(useSiteSession: FirSession, scopeSession: ScopeSession): FirScope {
@@ -99,7 +104,8 @@ internal fun FirClass<*>.scope(
     useSiteSession: FirSession,
     scopeSession: ScopeSession,
     skipPrivateMembers: Boolean,
-    classId: ClassId? = this.classId
+    classId: ClassId? = this.classId,
+    isFromExpectClass: Boolean = false
 ): FirTypeScope {
     val basicScope = scopeProvider.getUseSiteMemberScope(
         this, useSiteSession, scopeSession
@@ -107,8 +113,11 @@ internal fun FirClass<*>.scope(
     if (substitutor == ConeSubstitutor.Empty) return basicScope
 
     return scopeSession.getOrBuild(
-        this, ConeSubstitutionScopeKey(classId, substitutor)
+        this, ConeSubstitutionScopeKey(classId, isFromExpectClass, substitutor)
     ) {
-        FirClassSubstitutionScope(useSiteSession, basicScope, scopeSession, substitutor, skipPrivateMembers, classId)
+        FirClassSubstitutionScope(
+            useSiteSession, basicScope, scopeSession, substitutor,
+            skipPrivateMembers, classId, makeExpect = isFromExpectClass
+        )
     }
 }
