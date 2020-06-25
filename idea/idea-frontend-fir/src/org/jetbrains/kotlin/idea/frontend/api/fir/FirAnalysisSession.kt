@@ -21,6 +21,7 @@ import org.jetbrains.kotlin.fir.types.*
 import org.jetbrains.kotlin.idea.fir.*
 import org.jetbrains.kotlin.idea.fir.low.level.api.LowLevelFirApiFacade
 import org.jetbrains.kotlin.idea.frontend.api.*
+import org.jetbrains.kotlin.idea.frontend.api.symbols.*
 import org.jetbrains.kotlin.idea.references.FirReferenceResolveHelper
 import org.jetbrains.kotlin.idea.references.FirReferenceResolveHelper.toTargetSymbol
 import org.jetbrains.kotlin.name.ClassId
@@ -30,12 +31,24 @@ import org.jetbrains.kotlin.psi.*
 class FirAnalysisSession(
     project: Project
 ) : FrontendAnalysisSession(project) {
-   constructor(element: KtElement) : this(element.project)
+    constructor(element: KtElement) : this(element.project)
 
     internal val symbolBuilder = KtSymbolByFirBuilder(validityToken)
 
     init {
         assertIsValid()
+    }
+
+    override fun createSymbol(klass: KtClassOrObject): KtClassOrObjectSymbol = withValidityAssertion {
+        symbolBuilder.buildClassSymbol(klass.getOrBuildFirOfType())
+    }
+
+    override fun createSymbol(function: KtNamedFunction): KtFunctionSymbol = withValidityAssertion {
+        symbolBuilder.buildFunctionSymbol(function.getOrBuildFirOfType())
+    }
+
+    override fun createSymbol(property: KtProperty): KtVariableSymbol = withValidityAssertion {
+        symbolBuilder.buildPropertySymbol(property.getOrBuildFirOfType())
     }
 
     override fun getSmartCastedToTypes(expression: KtExpression): Collection<TypeInfo>? {
@@ -118,11 +131,9 @@ class FirAnalysisSession(
         return when {
             resolvedCalleeSymbol is FirConstructorSymbol -> {
                 val fir = resolvedCalleeSymbol.fir
-                when (resolvedFunctionPsi) {
-                    is KtClass -> KtImplicitPrimaryConstructorCallInfo(resolvedFunctionPsi)
-                    is PsiClass -> JavaImplicitPrimaryConstructorCallInfo(resolvedFunctionPsi)
-                    is KtConstructor<*> -> KtExplicitConstructorCallInfo(resolvedFunctionPsi, fir.isPrimary)
-                    is PsiMethod -> JavaExplicitConstructorCallInfo(resolvedFunctionPsi, fir.isPrimary)
+                when (resolvedFunctionSymbol) {
+                    is KtClassOrObjectSymbol -> ImplicitPrimaryConstructorCallInfo(resolvedFunctionSymbol)
+                    is KtConstructorSymbol -> ExplicitConstructorCallInfo(resolvedFunctionSymbol, fir.isPrimary)
                     else -> {
                         val classId = resolvedCalleeSymbol.callableId.classId
                         val firClass = classId?.let(session.firSymbolProvider::getClassLikeSymbolByFqName)?.fir
@@ -144,7 +155,7 @@ class FirAnalysisSession(
                         when (functionSymbol?.callableId) {
                             null -> null
                             in kotlinFunctionInvokeCallableIds -> VariableAsFunctionCallInfo(target, functionSymbol.fir.isSuspend)
-                            else -> (resolvedFunctionSymbol as? KtSimpleFunctionSymbol)
+                            else -> (resolvedFunctionSymbol as? KtFunctionSymbol)
                                 ?.let { VariableAsFunctionLikeCallInfo(target, it) }
                         }
                     }
@@ -156,7 +167,7 @@ class FirAnalysisSession(
     }
 
     private fun KtSymbol.asSimpleFunctionCall() =
-        (this as? KtSimpleFunctionSymbol)?.let(::SimpleFunctionCallInfo)
+        (this as? KtFunctionSymbol)?.let(::SimpleFunctionCallInfo)
 
     private fun forEachSuperClass(firClass: FirClass<*>, action: (FirResolvedTypeRef) -> Unit) {
         firClass.superTypeRefs.forEach { superType ->

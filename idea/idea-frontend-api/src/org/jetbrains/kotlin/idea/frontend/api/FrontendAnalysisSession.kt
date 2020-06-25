@@ -7,6 +7,7 @@ package org.jetbrains.kotlin.idea.frontend.api
 
 import com.intellij.openapi.project.Project
 import org.jetbrains.kotlin.diagnostics.Diagnostic
+import org.jetbrains.kotlin.idea.frontend.api.symbols.*
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.psi.*
 
@@ -14,6 +15,10 @@ abstract class FrontendAnalysisSession(project: Project) : Invalidatable {
     protected val validityToken = ReadActionConfinementValidityToken(project)
     override fun isValid(): Boolean = validityToken.isValid()
     override fun invalidationReason(): String = validityToken.invalidationReason()
+
+    abstract fun createSymbol(klass: KtClassOrObject): KtClassOrObjectSymbol
+    abstract fun createSymbol(function: KtNamedFunction): KtFunctionLikeSymbol
+    abstract fun createSymbol(property: KtProperty): KtVariableSymbol
 
 
     abstract fun getSmartCastedToTypes(expression: KtExpression): Collection<TypeInfo>?
