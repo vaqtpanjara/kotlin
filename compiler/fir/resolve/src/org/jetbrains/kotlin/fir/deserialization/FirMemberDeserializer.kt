@@ -26,6 +26,7 @@ import org.jetbrains.kotlin.metadata.deserialization.*
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.protobuf.MessageLite
 import org.jetbrains.kotlin.serialization.deserialization.ProtoEnumFlags
 import org.jetbrains.kotlin.serialization.deserialization.builtins.BuiltInSerializerProtocol
 import org.jetbrains.kotlin.serialization.deserialization.descriptors.DeserializedContainerSource
@@ -319,7 +320,11 @@ class FirMemberDeserializer(private val c: FirDeserializationContext) {
             this.symbol = symbol
             resolvePhase = FirResolvePhase.ANALYZED_DEPENDENCIES
             typeParameters += local.typeDeserializer.ownTypeParameters.map { it.fir }
-            valueParameters += local.memberDeserializer.valueParameters(proto.valueParameterList)
+            valueParameters += local.memberDeserializer.valueParameters(
+                proto.valueParameterList,
+                proto,
+                AbstractAnnotationDeserializer.CallableKind.OTHERS
+            )
             annotations +=
                 c.annotationDeserializer.loadFunctionAnnotations(c.containerSource, proto, local.nameResolver, local.typeTable)
             this.containerSource = c.containerSource
@@ -369,7 +374,10 @@ class FirMemberDeserializer(private val c: FirDeserializationContext) {
                 typeParameters.filterIsInstance<FirTypeParameter>()
                     .map { buildConstructedClassTypeParameterRef { this.symbol = it.symbol } }
             valueParameters += local.memberDeserializer.valueParameters(
-                proto.valueParameterList, addDefaultValue = classBuilder.symbol.classId == StandardClassIds.Enum
+                proto.valueParameterList,
+                proto,
+                AbstractAnnotationDeserializer.CallableKind.OTHERS,
+                addDefaultValue = classBuilder.symbol.classId == StandardClassIds.Enum
             )
             annotations +=
                 c.annotationDeserializer.loadConstructorAnnotations(c.containerSource, proto, local.nameResolver, local.typeTable)
@@ -385,9 +393,11 @@ class FirMemberDeserializer(private val c: FirDeserializationContext) {
 
     private fun valueParameters(
         valueParameters: List<ProtoBuf.ValueParameter>,
+        callableProto: MessageLite,
+        callableKind: AbstractAnnotationDeserializer.CallableKind,
         addDefaultValue: Boolean = false
     ): List<FirValueParameter> {
-        return valueParameters.map { proto ->
+        return valueParameters.mapIndexed { index, proto ->
             val flags = if (proto.hasFlags()) proto.flags else 0
             val name = c.nameResolver.getName(proto.name)
             buildValueParameter {
@@ -403,7 +413,15 @@ class FirMemberDeserializer(private val c: FirDeserializationContext) {
                 isCrossinline = Flags.IS_CROSSINLINE.get(flags)
                 isNoinline = Flags.IS_NOINLINE.get(flags)
                 isVararg = proto.varargElementType(c.typeTable) != null
-                annotations += c.annotationDeserializer.loadValueParameterAnnotations(proto, c.nameResolver)
+                annotations += c.annotationDeserializer.loadValueParameterAnnotations(
+                    c.containerSource,
+                    callableProto,
+                    proto,
+                    c.nameResolver,
+                    c.typeTable,
+                    callableKind,
+                    index,
+                )
             }
         }.toList()
     }
