@@ -63,7 +63,7 @@ fun getPlatformActualTooltip(declaration: KtDeclaration): String? {
 }
 
 fun KtDeclaration.allNavigatableActualDeclarations(): Set<KtDeclaration> =
-    actualDeclarations() + findMarkerBoundDeclarations().flatMap { it.actualsForExpected().asSequence() }
+    actualDeclarations() + findMarkerBoundDeclarations().flatMap { it.actualDeclarations().asSequence() }
 
 class ActualExpectedPsiElementCellRenderer : DefaultPsiElementCellRenderer() {
     override fun getContainerText(element: PsiElement?, name: String?) = ""
