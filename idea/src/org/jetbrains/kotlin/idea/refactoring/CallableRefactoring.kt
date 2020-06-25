@@ -37,6 +37,7 @@ import org.jetbrains.kotlin.idea.core.getDeepestSuperDeclarations
 import org.jetbrains.kotlin.idea.core.getDirectlyOverriddenDeclarations
 import org.jetbrains.kotlin.idea.search.declarationsSearch.forEachOverridingElement
 import org.jetbrains.kotlin.idea.util.actualDeclarations
+import org.jetbrains.kotlin.idea.util.expectedDeclaration
 import org.jetbrains.kotlin.idea.util.expectedDescriptor
 import org.jetbrains.kotlin.idea.util.getResolutionScope
 import org.jetbrains.kotlin.psi.*
@@ -194,7 +195,7 @@ private fun collectAffectedCallables(declaration: PsiElement, results: MutableCo
             collectAffectedCallables(it, results)
         }
 
-        declaration.liftToExpected()?.let { collectAffectedCallables(it, results) }
+        declaration.expectedDeclaration()?.let { collectAffectedCallables(it, results) }
 
         if (declaration !is KtCallableDeclaration) return
         declaration.forEachOverridingElement { _, overridingElement ->
