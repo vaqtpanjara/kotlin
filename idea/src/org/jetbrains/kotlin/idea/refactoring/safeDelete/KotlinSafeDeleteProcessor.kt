@@ -47,6 +47,7 @@ import org.jetbrains.kotlin.idea.refactoring.*
 import org.jetbrains.kotlin.idea.references.KtReference
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchOptions
 import org.jetbrains.kotlin.idea.search.ideaExtensions.KotlinReferencesSearchParameters
+import org.jetbrains.kotlin.idea.search.projectScope
 import org.jetbrains.kotlin.idea.search.usagesSearch.processDelegationCallConstructorUsages
 import org.jetbrains.kotlin.idea.util.expectedDeclaration
 import org.jetbrains.kotlin.idea.util.isEffectivelyExpect
