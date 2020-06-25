@@ -102,5 +102,5 @@ internal fun ModuleDescriptor.getPackageMemberScopeWithoutDependencies(fqName: F
 
     val memberScopes = packageFragmentProviderForModuleContentWithoutDependencies.getPackageFragments(fqName)
         .map { it.getMemberScope() }
-    return ChainedMemberScope("Scope of package $fqName in module $this without dependencies", memberScopes)
+    return ChainedMemberScope.create("Scope of package $fqName in module $this without dependencies", memberScopes)
 }
