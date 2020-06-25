@@ -131,16 +131,7 @@ class FirAnalysisSession(
         return when {
             resolvedCalleeSymbol is FirConstructorSymbol -> {
                 val fir = resolvedCalleeSymbol.fir
-                when (resolvedFunctionSymbol) {
-                    is KtClassOrObjectSymbol -> ImplicitPrimaryConstructorCallInfo(resolvedFunctionSymbol)
-                    is KtConstructorSymbol -> ExplicitConstructorCallInfo(resolvedFunctionSymbol, fir.isPrimary)
-                    else -> {
-                        val classId = resolvedCalleeSymbol.callableId.classId
-                        val firClass = classId?.let(session.firSymbolProvider::getClassLikeSymbolByFqName)?.fir
-                        (firClass?.buildSymbol(symbolBuilder) as? KtClassOrObjectSymbol)
-                            ?.let(::ImplicitPrimaryConstructorCallInfo)
-                    }
-                }
+                FunctionCallInfo(symbolBuilder.buildFirConstructorSymbol(fir))
             }
             firCall.dispatchReceiver is FirQualifiedAccessExpression && firCall.isImplicitFunctionCall() -> {
                 val target = with(FirReferenceResolveHelper) {
@@ -167,7 +158,7 @@ class FirAnalysisSession(
     }
 
     private fun KtSymbol.asSimpleFunctionCall() =
-        (this as? KtFunctionSymbol)?.let(::SimpleFunctionCallInfo)
+        (this as? KtFunctionSymbol)?.let(::FunctionCallInfo)
 
     private fun forEachSuperClass(firClass: FirClass<*>, action: (FirResolvedTypeRef) -> Unit) {
         firClass.superTypeRefs.forEach { superType ->

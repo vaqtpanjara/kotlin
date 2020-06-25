@@ -21,23 +21,10 @@ data class VariableAsFunctionLikeCallInfo(val target: KtVariableLikeSymbol, val 
     override val targetFunction get() = invokeFunction
 }
 
-data class SimpleFunctionCallInfo(override val targetFunction: KtFunctionSymbol) : CallInfo() {
-    override val isSuspendCall: Boolean get() = targetFunction.isSuspend
-}
-
-// ConstructorCallInfo
-
-sealed class ConstructorCallInfo : CallInfo() {
-    final override val isSuspendCall: Boolean = false
-    abstract val isPrimary: Boolean
-}
-
-data class ExplicitConstructorCallInfo(
-    override val targetFunction: KtConstructorSymbol,
-    override val isPrimary: Boolean
-) : ConstructorCallInfo()
-
-data class ImplicitPrimaryConstructorCallInfo(val owner: KtClassOrObjectSymbol) : ConstructorCallInfo() {
-    override val targetFunction: KtFunctionLikeSymbol? = null
-    override val isPrimary: Boolean = true
+data class FunctionCallInfo(override val targetFunction: KtFunctionLikeSymbol) : CallInfo() {
+    override val isSuspendCall: Boolean
+        get() = when (targetFunction) {
+            is KtFunctionSymbol -> targetFunction.isSuspend
+            else -> false
+        }
 }
