@@ -28,4 +28,4 @@ fun showOkCancelDialog(
     )
 }
 
-typealias ComboBox = javax.swing.JComboBox<Visibility>
+typealias ComboBox = com.intellij.openapi.ui.ComboBox<Visibility>
