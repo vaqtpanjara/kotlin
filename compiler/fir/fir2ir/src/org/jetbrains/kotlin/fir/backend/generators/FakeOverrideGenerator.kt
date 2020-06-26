@@ -79,7 +79,7 @@ class FakeOverrideGenerator(
                         (functionSymbol.callableId.classId == klass.symbol.classId || fakeOverrideMode == FakeOverrideMode.SUBSTITUTION)
                     ) {
                         // Substitution case
-                        val irFunction = declarationStorage.createIrFunction(
+                        val irFunction = declarationStorage.getCachedIrFunction(originalFunction) ?: declarationStorage.createIrFunction(
                             originalFunction, irParent = this,
                             thisReceiverOwner = declarationStorage.findIrParent(baseSymbol.fir) as? IrClass,
                             origin = origin
