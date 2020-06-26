@@ -31,8 +31,9 @@ internal open class InspectClassesForMultiModuleIC : DefaultTask() {
     }
 
     @get:InputFiles
-    internal val sourceSetOutputClassesDir
-    get() = project.convention.findPlugin(JavaPluginConvention::class.java)?.sourceSets?.findByName(sourceSetName)?.output?.classesDirs
+    internal val sourceSetOutputClassesDir by lazy {
+        project.convention.findPlugin(JavaPluginConvention::class.java)?.sourceSets?.findByName(sourceSetName)?.output?.classesDirs
+    }
 
     @get:Internal
     internal val fileTrees

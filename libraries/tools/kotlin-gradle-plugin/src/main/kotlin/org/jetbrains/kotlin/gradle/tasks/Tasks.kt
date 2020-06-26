@@ -173,8 +173,9 @@ abstract class AbstractKotlinCompile<T : CommonCompilerArguments>() : AbstractKo
     protected val multiModuleICSettings: MultiModuleICSettings
         get() = MultiModuleICSettings(taskData.buildHistoryFile, useModuleDetection)
 
-    val pluginClasspath: FileCollection
-    @Classpath @InputFiles get() = project.configurations.getByName(PLUGIN_CLASSPATH_CONFIGURATION_NAME)
+    @get:InputFiles
+    @get:Classpath
+    val pluginClasspath: FileCollection = project.configurations.getByName(PLUGIN_CLASSPATH_CONFIGURATION_NAME)
 
     @get:Internal
     internal val pluginOptions = CompilerPluginOptions()
