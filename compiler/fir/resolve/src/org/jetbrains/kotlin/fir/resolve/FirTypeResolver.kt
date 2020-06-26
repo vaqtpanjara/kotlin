@@ -14,9 +14,7 @@ import org.jetbrains.kotlin.fir.types.FirTypeRef
 import org.jetbrains.kotlin.fir.types.FirUserTypeRef
 
 interface FirTypeResolver : FirSessionComponent {
-
     fun resolveType(typeRef: FirTypeRef, scope: FirIterableScope): ConeKotlinType
     fun resolveToSymbol(typeRef: FirTypeRef, scope: FirIterableScope): FirClassifierSymbol<*>?
-
     fun resolveUserType(typeRef: FirUserTypeRef, symbol: FirClassifierSymbol<*>?, scope: FirScope): ConeKotlinType
 }
