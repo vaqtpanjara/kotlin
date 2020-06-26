@@ -9,6 +9,7 @@ import org.gradle.api.Task
 import org.gradle.workers.IsolationMode
 import org.gradle.workers.WorkerExecutor
 import org.jetbrains.kotlin.gradle.logging.kotlinDebug
+import org.jetbrains.kotlin.gradle.tasks.GradleCompileTask
 
 internal class GradleCompilerRunnerWithWorkers(
     task: Task,

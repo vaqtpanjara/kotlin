@@ -20,6 +20,7 @@ import org.jetbrains.kotlin.cli.common.arguments.CommonToolArguments
 import org.jetbrains.kotlin.cli.common.arguments.K2JSCompilerArguments
 import org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments
 import org.jetbrains.kotlin.compilerRunner.*
+import org.jetbrains.kotlin.compilerRunner.GradleCompilerRunner.Companion.normalizeForFlagFile
 import org.jetbrains.kotlin.daemon.common.MultiModuleICSettings
 import org.jetbrains.kotlin.gradle.dsl.*
 import org.jetbrains.kotlin.gradle.incremental.ChangedFiles
@@ -39,6 +40,7 @@ import org.jetbrains.kotlin.gradle.utils.isParentOf
 import org.jetbrains.kotlin.gradle.utils.pathsAsStringRelativeTo
 import org.jetbrains.kotlin.gradle.utils.toSortedPathsArray
 import org.jetbrains.kotlin.incremental.ChangedFiles
+import org.jetbrains.kotlin.incremental.IncrementalModuleInfo
 import org.jetbrains.kotlin.library.impl.isKotlinLibrary
 import org.jetbrains.kotlin.utils.JsLibraryUtils
 import java.io.File
@@ -115,14 +117,49 @@ abstract class AbstractKotlinCompileTool<T : CommonToolArguments>
     protected abstract fun findKotlinCompilerClasspath(project: Project): List<File>
 }
 
-abstract class AbstractKotlinCompile<T : CommonCompilerArguments>() : AbstractKotlinCompileTool<T>() {
+interface GradleCompileTask : Task {
+    @get:Internal
+    val buildDir: File /*= project.buildDir*/
+
+    @get:Internal
+    val projectDir: File /*= project.rootProject.projectDir*/
+
+    @get:Internal
+    val rootDir: File /*= project.rootProject.rootDir*/
+
+    @get:Internal
+    val sessionsDir: File/* = GradleCompilerRunner.sessionsDir(project)*/
+
+    @get:Internal
+    val projectName: String /*= project.rootProject.name.normalizeForFlagFile()*/
+
+    @get:Internal
+    val buildModulesInfo: IncrementalModuleInfo /*= GradleCompilerRunner.buildModulesInfo(project.gradle)*/
+}
+
+abstract class AbstractKotlinCompile<T : CommonCompilerArguments>() : AbstractKotlinCompileTool<T>(), GradleCompileTask {
 
     init {
         cacheOnlyIfEnabledForKotlin()
     }
 
     @get:Internal
-    internal val buildDir = project.buildDir
+    override val buildDir = project.buildDir
+
+    @get:Internal
+    override val projectDir: File = project.rootProject.projectDir
+
+    @get:Internal
+    override val rootDir: File = project.rootProject.rootDir
+
+    @get:Internal
+    override val sessionsDir: File = GradleCompilerRunner.sessionsDir(project)
+
+    @get:Internal
+    override val projectName: String = project.rootProject.name.normalizeForFlagFile()
+
+    @get:Internal
+    override val buildModulesInfo: IncrementalModuleInfo = GradleCompilerRunner.buildModulesInfo(project.gradle)
 
     // avoid creating directory in getter: this can lead to failure in parallel build
     @get:LocalState
@@ -158,9 +195,7 @@ abstract class AbstractKotlinCompile<T : CommonCompilerArguments>() : AbstractKo
     internal var buildReportMode: BuildReportMode? = null
 
     @get:Internal
-    internal val taskData: KotlinCompileTaskData by project.provider {
-        KotlinCompileTaskData.get(project, name)
-    }
+    internal val taskData: KotlinCompileTaskData = KotlinCompileTaskData.get(project, name)
 
     @get:Input
     internal open var useModuleDetection: Boolean
@@ -274,8 +309,10 @@ abstract class AbstractKotlinCompile<T : CommonCompilerArguments>() : AbstractKo
 
     private val kotlinLogger by lazy { GradleKotlinLogger(logger) }
 
-    internal open fun compilerRunner(): GradleCompilerRunner =
-        GradleCompilerRunner(this)
+    @get:Internal
+    internal val compilerRunner = compilerRunner()
+
+    internal open fun compilerRunner(): GradleCompilerRunner = GradleCompilerRunner(thisTaskProvider)
 
     @TaskAction
     fun execute(inputs: IncrementalTaskInputs) {
@@ -415,7 +452,7 @@ open class KotlinCompile : AbstractKotlinCompile<K2JVMCompilerArguments>(), Kotl
     }
 
     @get:Internal
-    internal val compilerArgumentsContributor: CompilerArgumentsContributor<K2JVMCompilerArguments> by project.provider {
+    internal val compilerArgumentsContributor: CompilerArgumentsContributor<K2JVMCompilerArguments> by lazy {
         KotlinJvmCompilerArgumentsContributor(thisTaskProvider)
     }
 
@@ -427,7 +464,7 @@ open class KotlinCompile : AbstractKotlinCompile<K2JVMCompilerArguments>(), Kotl
 
         val messageCollector = GradlePrintingMessageCollector(logger, args.allWarningsAsErrors)
         val outputItemCollector = OutputItemsCollectorImpl()
-        val compilerRunner = compilerRunner()
+        val compilerRunner = compilerRunner
 
         val icEnv = if (isIncrementalCompilationEnabled()) {
             logger.info(USING_JVM_INCREMENTAL_COMPILATION_MESSAGE)
@@ -503,21 +540,21 @@ open class KotlinCompile : AbstractKotlinCompile<K2JVMCompilerArguments>(), Kotl
 internal open class KotlinCompileWithWorkers @Inject constructor(
     private val workerExecutor: WorkerExecutor
 ) : KotlinCompile() {
-    override fun compilerRunner() = GradleCompilerRunnerWithWorkers(this, workerExecutor)
+    override fun compilerRunner() = GradleCompilerRunnerWithWorkers(thisTaskProvider, workerExecutor)
 }
 
 @CacheableTask
 internal open class Kotlin2JsCompileWithWorkers @Inject constructor(
     private val workerExecutor: WorkerExecutor
 ) : Kotlin2JsCompile() {
-    override fun compilerRunner() = GradleCompilerRunnerWithWorkers(this, workerExecutor)
+    override fun compilerRunner() = GradleCompilerRunnerWithWorkers(thisTaskProvider, workerExecutor)
 }
 
 @CacheableTask
 internal open class KotlinCompileCommonWithWorkers @Inject constructor(
     private val workerExecutor: WorkerExecutor
 ) : KotlinCompileCommon() {
-    override fun compilerRunner() = GradleCompilerRunnerWithWorkers(this, workerExecutor)
+    override fun compilerRunner() = GradleCompilerRunnerWithWorkers(thisTaskProvider, workerExecutor)
 }
 
 @CacheableTask
@@ -656,7 +693,7 @@ open class Kotlin2JsCompile : AbstractKotlinCompile<K2JSCompilerArguments>(), Ko
 
         val messageCollector = GradlePrintingMessageCollector(logger, args.allWarningsAsErrors)
         val outputItemCollector = OutputItemsCollectorImpl()
-        val compilerRunner = compilerRunner()
+        val compilerRunner = compilerRunner
 
         val icEnv = if (isIncrementalCompilationEnabled()) {
             logger.info(USING_JS_INCREMENTAL_COMPILATION_MESSAGE)
