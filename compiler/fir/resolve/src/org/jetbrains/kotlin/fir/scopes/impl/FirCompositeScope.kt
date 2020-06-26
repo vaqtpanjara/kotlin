@@ -27,5 +27,4 @@ class FirCompositeScope(
             scopeList.removeAt(scopeList.size - 1)
         }
     }
-
 }
