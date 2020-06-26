@@ -52,22 +52,12 @@ internal class KotlinCompilationNpmResolver(
     val packageJsonTaskHolder = KotlinPackageJsonTask.create(compilation)
 
     val publicPackageJsonTaskHolder: TaskProvider<PublicPackageJsonTask> =
-        project.registerTask<PublicPackageJsonTask>(
+        project.registerTask(
             npmProject.publicPackageJsonTaskName,
             listOf(nodeJs, npmProject)
         ) {
-            it.skipOnEmptyNpmDependencies = true
             it.dependsOn(nodeJs.npmInstallTaskProvider)
             it.dependsOn(packageJsonTaskHolder)
-        }.also { packageJsonTask ->
-            if (compilation.isMain()) {
-                project.tasks
-                    .withType(Zip::class.java)
-                    .named(npmProject.target.artifactsTaskName)
-                    .configure {
-                        it.from(packageJsonTask)
-                    }
-            }
         }
 
     val plugins: List<CompilationResolverPlugin> = projectResolver.resolver.plugins
@@ -178,6 +168,15 @@ internal class KotlinCompilationNpmResolver(
             if (compilation.name == KotlinCompilation.TEST_COMPILATION_NAME) {
                 val main = compilation.target.compilations.findByName(KotlinCompilation.MAIN_COMPILATION_NAME) as KotlinJsCompilation
                 internalDependencies.add(projectResolver[main])
+            }
+
+            if (compilation.isMain()) {
+                project.tasks
+                    .withType(Zip::class.java)
+                    .named(npmProject.target.artifactsTaskName)
+                    .configure {
+                        it.from(project.tasks.named(npmProject.publicPackageJsonTaskName))
+                    }
             }
 
             plugins.forEach {
