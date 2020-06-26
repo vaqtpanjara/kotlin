@@ -23,6 +23,12 @@ class KotlinScriptDependenciesClassFinder(
         .getAllScriptsDependenciesClassFiles().filter { it.isValid }.toList()
 
     override fun findClass(qualifiedName: String, scope: GlobalSearchScope): PsiClass? {
+        val scriptDependencies =
+            ScriptConfigurationManager.getInstance(project).getAllScriptsDependenciesClassFiles()
+        val firstJarInDependencies = scriptDependencies.firstOrNull() ?: return null
+
+        if (!scope.contains(firstJarInDependencies)) return null
+
         tailrec fun findClassInner(parentQualifier: String, inners: List<String> = emptyList()): PsiClass? {
             if (parentQualifier.isEmpty()) return null
             ProgressManager.checkCanceled()
@@ -46,7 +52,7 @@ class KotlinScriptDependenciesClassFinder(
 
             val file = aClass.containingFile?.virtualFile ?: return null
             val index = ProjectFileIndex.SERVICE.getInstance(myProject)
-            if (index.isInContent(file) || index.isInLibraryClasses(file) || index.isInLibrarySource(file)) {
+            if (index.isInContent(file) || index.isInLibrary(file)) {
                 return null
             }
             return aClass
