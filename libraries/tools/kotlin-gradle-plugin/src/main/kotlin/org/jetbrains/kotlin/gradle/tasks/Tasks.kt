@@ -87,13 +87,9 @@ abstract class AbstractKotlinCompileTool<T : CommonToolArguments>
     @get:Input
     internal var useFallbackCompilerSearch: Boolean = false
 
-    @get:Input
-    internal val compilerClasspathConfiguration
-    get() = project.configurations.getByName(COMPILER_CLASSPATH_CONFIGURATION_NAME).resolve().toList()
-
     @get:Classpath
     @get:InputFiles
-    internal val computedCompilerClasspath: List<File> by project.provider {
+    internal val computedCompilerClasspath: List<File> by lazy {
         compilerClasspath?.takeIf { it.isNotEmpty() }
             ?: compilerJarFile?.let {
                 // a hack to remove compiler jar from the cp, will be dropped when compilerJarFile will be removed
@@ -101,7 +97,7 @@ abstract class AbstractKotlinCompileTool<T : CommonToolArguments>
             }
             ?: if (!useFallbackCompilerSearch) {
                 try {
-                    compilerClasspathConfiguration
+                    project.configurations.getByName(COMPILER_CLASSPATH_CONFIGURATION_NAME).resolve().toList()
                 } catch (e: Exception) {
                     logger.error(
                         "Could not resolve compiler classpath. " +
@@ -213,8 +209,8 @@ abstract class AbstractKotlinCompile<T : CommonCompilerArguments>() : AbstractKo
     }
 
     @get:Internal
-    internal val kotlinExtProvider: KotlinProjectExtension
-        get() = project.extensions.findByType(KotlinProjectExtension::class.java)!!
+    @field:Transient
+    internal val kotlinExtProvider: KotlinProjectExtension = project.extensions.findByType(KotlinProjectExtension::class.java)!!
 
     override fun getDestinationDir(): File =
         taskData.destinationDir.get()
@@ -346,9 +342,7 @@ abstract class AbstractKotlinCompile<T : CommonCompilerArguments>() : AbstractKo
     internal abstract fun callCompilerAsync(args: T, sourceRoots: SourceRoots, changedFiles: ChangedFiles)
 
     @get:Input
-    internal val isMultiplatform: Boolean by project.provider {
-        project.plugins.any { it is KotlinPlatformPluginBase || it is KotlinMultiplatformPluginWrapper }
-    }
+    internal val isMultiplatform: Boolean = project.plugins.any { it is KotlinPlatformPluginBase || it is KotlinMultiplatformPluginWrapper }
 
     @get:Internal
     internal val abstractKotlinCompileArgumentsContributor by project.provider { AbstractKotlinCompileArgumentsContributor(thisTaskProvider) }
@@ -463,7 +457,7 @@ open class KotlinCompile : AbstractKotlinCompile<K2JVMCompilerArguments>(), Kotl
     }
 
     @get:Input
-    val illegalTaskIsPresentProvider: Provider<Boolean> = project.provider {
+    val illegalTaskIsPresent: Boolean by lazy {
         var illegalTaskOrNull: AbstractCompile? = null
         project.tasks.configureEach {
             if (it is AbstractCompile &&
@@ -488,7 +482,7 @@ open class KotlinCompile : AbstractKotlinCompile<K2JVMCompilerArguments>(), Kotl
     private fun disableMultiModuleIC(): Boolean {
         if (!isIncrementalCompilationEnabled() || javaOutputDir == null) return false
 
-        return illegalTaskIsPresentProvider.get()
+        return illegalTaskIsPresent
     }
 
     // override setSource to track source directory sets and files (for generated android folders)

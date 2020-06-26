@@ -401,7 +401,7 @@ open class KotlinNativeCompile : AbstractKotlinNativeCompile<KotlinCommonOptions
 
         override var freeCompilerArgs: List<String> = listOf()
         // Store the provider in order for Gradle Instant Execution to capture the state
-        private val freeCompilerArgsImpl by compilation.map { it.extraOptsNoWarn }
+//        private val freeCompilerArgsImpl by compilation.map { it.extraOptsNoWarn }
 
     }
 

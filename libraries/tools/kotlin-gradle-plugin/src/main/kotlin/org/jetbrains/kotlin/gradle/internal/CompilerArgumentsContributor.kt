@@ -44,7 +44,7 @@ internal open class AbstractKotlinCompileArgumentsContributor<T : CommonCompiler
 
     protected val logger by taskProvider.map { it.logger }
 
-    private val isMultiplatform by taskProvider.map { it.isMultiplatform }
+    private val isMultiplatform = taskProvider.map { it.isMultiplatform }.get()
 
     private val pluginClasspath by taskProvider.map { it.pluginClasspath }
     private val pluginOptions by taskProvider.map { it.pluginOptions }
