@@ -44,6 +44,10 @@ abstract class KtTypedSymbol : KtSymbol {
 abstract class KtVariableLikeSymbol : KtTypedSymbol(), KtNamedSymbol, KtSymbolWithKind {
 }
 
+interface PossibleExtensionDeclaration {
+    val isExtension: Boolean
+    val receiverType: TypeInfo?
+}
 
 abstract class KtEnumEntrySymbol : KtVariableLikeSymbol() {
     final override val symbolKind: KtSymbolKind get() = KtSymbolKind.MEMBER
@@ -60,11 +64,12 @@ abstract class KtFieldSymbol : KtVariableSymbol() {
     final override val symbolKind: KtSymbolKind get() = KtSymbolKind.MEMBER
 }
 
-abstract class KtPropertySymbol : KtVariableSymbol() {
+abstract class KtPropertySymbol : KtVariableSymbol(), PossibleExtensionDeclaration {
 }
 
 abstract class KtLocalVariableSymbol : KtVariableSymbol()
-abstract class KtFunctionLikeSymbol : KtTypedSymbol(), KtSymbolWithKind {
+
+sealed class KtFunctionLikeSymbol : KtTypedSymbol(), KtSymbolWithKind {
     abstract val valueParameters: List<KtParameterSymbol>
 }
 
@@ -72,10 +77,9 @@ abstract class KtAnonymousFunctionSymbol : KtFunctionLikeSymbol() {
     final override val symbolKind: KtSymbolKind get() = KtSymbolKind.LOCAL
 }
 
-abstract class KtFunctionSymbol : KtFunctionLikeSymbol(), KtNamedSymbol {
+abstract class KtFunctionSymbol : KtFunctionLikeSymbol(), KtNamedSymbol, PossibleExtensionDeclaration {
     abstract val isSuspend: Boolean
     abstract val isOperator: Boolean
-    abstract val isExtension: Boolean
     abstract val fqName: FqName?
 
     abstract override val valueParameters: List<KtSimpleFunctionParameterSymbol>
@@ -89,7 +93,7 @@ abstract class KtConstructorSymbol : KtFunctionLikeSymbol() {
 }
 
 abstract class KtConstructorParameterSymbol : KtParameterSymbol(), KtNamedSymbol {
-    abstract val kind: KtConstructorParameterSymbolKind
+    abstract val constructorParameteKind: KtConstructorParameterSymbolKind
 }
 
 enum class KtConstructorParameterSymbolKind {

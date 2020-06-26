@@ -7,9 +7,11 @@ package org.jetbrains.kotlin.idea.frontend.api.fir.symbols
 
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.fir.declarations.FirConstructor
+import org.jetbrains.kotlin.fir.declarations.impl.FirValueParameterImpl
 import org.jetbrains.kotlin.idea.fir.findPsi
 import org.jetbrains.kotlin.idea.frontend.api.Invalidatable
 import org.jetbrains.kotlin.idea.frontend.api.TypeInfo
+import org.jetbrains.kotlin.idea.frontend.api.fir.KtSymbolByFirBuilder
 import org.jetbrains.kotlin.idea.frontend.api.fir.utils.asTypeInfo
 import org.jetbrains.kotlin.idea.frontend.api.fir.utils.cached
 import org.jetbrains.kotlin.idea.frontend.api.fir.utils.weakRef
@@ -20,14 +22,20 @@ import org.jetbrains.kotlin.idea.frontend.api.withValidityAssertion
 
 internal class FirKtConstructorSymbol(
     fir: FirConstructor,
-    override val token: Invalidatable
+    override val token: Invalidatable,
+    private val builder: KtSymbolByFirBuilder
 ) : KtConstructorSymbol(),
     FirKtSymbol<FirConstructor> {
     override val fir: FirConstructor by weakRef(fir)
     override val psi: PsiElement? by cached { fir.findPsi(fir.session) }
 
     override val type: TypeInfo by cached { fir.returnTypeRef.asTypeInfo(fir.session, token) }
-    override val valueParameters: List<KtConstructorParameterSymbol> by cached<List<KtConstructorParameterSymbol>> { TODO() }
+    override val valueParameters: List<KtConstructorParameterSymbol> by cached {
+        fir.valueParameters.map { valueParameter ->
+            check(valueParameter is FirValueParameterImpl)
+            builder.buildFirConstructorParameter(valueParameter)
+        }
+    }
 
     override val isPrimary: Boolean get() = withValidityAssertion { fir.isPrimary }
     override val symbolKind: KtSymbolKind get() = KtSymbolKind.MEMBER

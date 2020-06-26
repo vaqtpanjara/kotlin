@@ -14,7 +14,7 @@ import org.jetbrains.kotlin.idea.frontend.api.fir.symbols.FirKtClassOrObjectSymb
 import org.jetbrains.kotlin.idea.frontend.api.fir.symbols.FirKtLocalVariableSymbol
 import org.jetbrains.kotlin.idea.frontend.api.fir.symbols.FirKtPropertySymbol
 import org.jetbrains.kotlin.idea.frontend.api.fir.symbols.FirKtFunctionSymbol
-import org.jetbrains.kotlin.idea.frontend.api.fir.symbols.FirKtSimpleFunctionValueParameterSymbol
+import org.jetbrains.kotlin.idea.frontend.api.fir.symbols.FirKtFunctionValueParameterSymbol
 import org.jetbrains.kotlin.idea.frontend.api.symbols.KtSymbol
 import org.jetbrains.kotlin.idea.frontend.api.symbols.KtVariableSymbol
 
@@ -38,10 +38,11 @@ internal class KtSymbolByFirBuilder(private val validityToken: Invalidatable) {
 
     // TODO it can be a constructor parameter, which may be split into parameter & property
     // we should handle them both
-    fun buildParameterSymbol(fir: FirValueParameterImpl) = FirKtSimpleFunctionValueParameterSymbol(fir, validityToken)
+    fun buildParameterSymbol(fir: FirValueParameterImpl) = FirKtFunctionValueParameterSymbol(fir, validityToken)
+    fun buildFirConstructorParameter(fir: FirValueParameterImpl) = FirKtConstructorValueParameterSymbol(fir, validityToken)
 
     fun buildFunctionSymbol(fir: FirSimpleFunction) = FirKtFunctionSymbol(fir, validityToken, this)
-    fun buildFirConstructorSymbol(fir: FirConstructor) = FirKtConstructorSymbol(fir, validityToken)
+    fun buildFirConstructorSymbol(fir: FirConstructor) = FirKtConstructorSymbol(fir, validityToken, this)
     fun buildFirTypeParameterSymbol(fir: FirTypeParameter) = FirKtTypeParameterSymbol(fir, validityToken)
     fun buildFirTypeAliasSymbol(fir: FirTypeAlias) = FirKtTypeAliasSymbol(fir, validityToken)
     fun buildFirEnumEntrySymbol(fir: FirEnumEntry) = FirKtEnumEntrySymbol(fir, validityToken)

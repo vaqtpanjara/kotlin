@@ -7,37 +7,39 @@ package org.jetbrains.kotlin.idea.frontend.api.fir.symbols
 
 import com.intellij.psi.PsiElement
 import org.jetbrains.kotlin.fir.declarations.FirProperty
+import org.jetbrains.kotlin.fir.declarations.impl.FirValueParameterImpl
 import org.jetbrains.kotlin.idea.fir.findPsi
 import org.jetbrains.kotlin.idea.frontend.api.Invalidatable
 import org.jetbrains.kotlin.idea.frontend.api.TypeInfo
 import org.jetbrains.kotlin.idea.frontend.api.fir.utils.asTypeInfo
 import org.jetbrains.kotlin.idea.frontend.api.fir.utils.cached
 import org.jetbrains.kotlin.idea.frontend.api.fir.utils.weakRef
-import org.jetbrains.kotlin.idea.frontend.api.symbols.KtPropertySymbol
-import org.jetbrains.kotlin.idea.frontend.api.symbols.KtSymbolKind
+import org.jetbrains.kotlin.idea.frontend.api.symbols.*
 import org.jetbrains.kotlin.idea.frontend.api.withValidityAssertion
 import org.jetbrains.kotlin.name.Name
 
-internal class FirKtPropertySymbol(
-    fir: FirProperty,
+internal class FirKtConstructorValueParameterSymbol(
+    fir: FirValueParameterImpl,
     override val token: Invalidatable
-) : KtPropertySymbol(), FirKtSymbol<FirProperty> {
-    init {
-        assert(!fir.isLocal)
-    }
-
-    override val fir: FirProperty by weakRef(fir)
+) : KtConstructorParameterSymbol(), FirKtSymbol<FirValueParameterImpl> {
+    override val fir: FirValueParameterImpl by weakRef(fir)
     override val psi: PsiElement? by cached { fir.findPsi(fir.session) }
-    override val isVal: Boolean get() = withValidityAssertion { fir.isVal }
+
     override val name: Name get() = withValidityAssertion { fir.name }
     override val type: TypeInfo by cached { fir.returnTypeRef.asTypeInfo(fir.session, token) }
-    override val receiverType: TypeInfo? by cached { fir.returnTypeRef.asTypeInfo(fir.session, token) }
-    override val isExtension: Boolean get() = withValidityAssertion { fir.receiverTypeRef != null }
     override val symbolKind: KtSymbolKind
         get() = withValidityAssertion {
-            when (fir.symbol.callableId.classId) {
-                null -> KtSymbolKind.TOP_LEVEL
-                else -> KtSymbolKind.MEMBER
+            when {
+                fir.isVal || fir.isVal -> KtSymbolKind.MEMBER
+                else -> KtSymbolKind.LOCAL
+            }
+        }
+    override val constructorParameteKind: KtConstructorParameterSymbolKind
+        get() = withValidityAssertion {
+            when {
+                fir.isVal -> KtConstructorParameterSymbolKind.VAL_PROPERTY
+                fir.isVar -> KtConstructorParameterSymbolKind.VAR_PROPERTY
+                else -> KtConstructorParameterSymbolKind.NON_PROPERTY
             }
         }
 }

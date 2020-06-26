@@ -20,7 +20,7 @@ import org.jetbrains.kotlin.idea.frontend.api.symbols.KtSymbolKind
 import org.jetbrains.kotlin.idea.frontend.api.withValidityAssertion
 import org.jetbrains.kotlin.name.Name
 
-internal class FirKtSimpleFunctionValueParameterSymbol(
+internal class FirKtFunctionValueParameterSymbol(
     fir: FirValueParameterImpl,
     override val token: Invalidatable
 ) : KtSimpleFunctionParameterSymbol(),

@@ -34,13 +34,14 @@ internal class FirKtFunctionSymbol(
     override val psi: PsiElement? by cached { fir.findPsi(fir.session) }
     override val name: Name get() = withValidityAssertion { fir.name }
     override val type: TypeInfo by cached { fir.returnTypeRef.asTypeInfo(fir.session, token) }
-    override val valueParameters: List<FirKtSimpleFunctionValueParameterSymbol> by cached {
+    override val valueParameters: List<FirKtFunctionValueParameterSymbol> by cached {
         fir.valueParameters.map { valueParameter ->
             check(valueParameter is FirValueParameterImpl)
             builder.buildParameterSymbol(valueParameter)
         }
     }
     override val isSuspend: Boolean get() = withValidityAssertion { fir.isSuspend }
+    override val receiverType: TypeInfo? by cached { fir.receiverTypeRef?.asTypeInfo(fir.session, token) }
     override val isOperator: Boolean get() = withValidityAssertion { fir.isOperator }
     override val isExtension: Boolean get() = withValidityAssertion { fir.receiverTypeRef != null }
     override val fqName: FqName? get() = withValidityAssertion { fir.symbol.callableId.asFqNameForDebugInfo() }
