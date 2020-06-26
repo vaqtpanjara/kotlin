@@ -291,7 +291,6 @@ internal fun Candidate.resolveArgument(
     argument: FirExpression,
     parameter: FirValueParameter?,
     isReceiver: Boolean,
-    isSafeCall: Boolean,
     sink: CheckerSink
 ) {
 
@@ -329,7 +328,7 @@ private fun Candidate.getExpectedTypeWithSAMConversion(
 
     // TODO: resolvedCall.registerArgumentWithSamConversion(argument, SamConversionDescription(convertedTypeByOriginal, convertedTypeByCandidate!!))
 
-    return samResolver.getFunctionTypeForPossibleSamType(candidateExpectedType).apply {
+    return samResolver.getFunctionTypeForPossibleSamType(candidateExpectedType)?.apply {
         usesSAM = true
     } ?: return null
 }

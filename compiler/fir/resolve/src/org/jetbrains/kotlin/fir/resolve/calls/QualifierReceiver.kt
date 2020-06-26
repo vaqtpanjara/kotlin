@@ -37,21 +37,17 @@ fun createQualifierReceiver(
     useSiteSession: FirSession,
     scopeSession: ScopeSession,
 ): QualifierReceiver? {
-
     val classLikeSymbol = explicitReceiver.symbol
-    when {
+    return when {
         classLikeSymbol != null -> {
             val classSymbol = classLikeSymbol.fir.fullyExpandedClass(useSiteSession)?.symbol ?: return null
-            return ClassQualifierReceiver(explicitReceiver, classSymbol, classLikeSymbol, useSiteSession, scopeSession)
+            ClassQualifierReceiver(explicitReceiver, classSymbol, classLikeSymbol, useSiteSession, scopeSession)
         }
-        else -> {
-            return PackageQualifierReceiver(explicitReceiver, useSiteSession)
-        }
+        else -> PackageQualifierReceiver(explicitReceiver, useSiteSession)
     }
 }
 
 abstract class QualifierReceiver(final override val explicitReceiver: FirExpression) : AbstractExplicitReceiver<FirResolvedQualifier>() {
-
     abstract fun classifierScope(): FirScope?
     abstract fun callableScopes(): List<FirScope>
 }
@@ -77,10 +73,9 @@ class ClassQualifierReceiver(
         val provider = klass.scopeProvider
         val levelScopes = mutableListOf<FirScope>()
         var currentDepth = 1
-        val queue =
-            ArrayDeque<Pair<ConeClassLikeType, Int>>()
+        val queue = ArrayDeque<Pair<ConeClassLikeType, Int>>()
         queue.addAll(
-            lookupSuperTypes(klass, lookupInterfaces = true, deep = false, useSiteSession = useSiteSession).map { it to 1 },
+            lookupSuperTypes(klass, lookupInterfaces = true, deep = false, useSiteSession = useSiteSession).map { it to 1 }
         )
         val visitedSymbols = mutableSetOf<FirRegularClassSymbol>()
         while (queue.isNotEmpty()) {
@@ -135,9 +130,7 @@ class ClassQualifierReceiver(
         val klass = classSymbol.fir
         return klass.scopeProvider.getNestedClassifierScope(klass, useSiteSession, scopeSession)
     }
-
 }
-
 
 class PackageQualifierReceiver(
     explicitReceiver: FirResolvedQualifier,
