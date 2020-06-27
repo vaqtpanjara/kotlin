@@ -382,7 +382,7 @@ open class KotlinNativeCompile : AbstractKotlinNativeCompile<KotlinCommonOptions
 
     // region Kotlin options.
     override val kotlinOptions: KotlinCommonOptions
-        get() = compilation.kotlinOptions
+        get() = compilation.get().kotlinOptions
 
     @get:Input
     override val additionalCompilerOptions: Provider<Collection<String>> = project.provider {
@@ -446,7 +446,7 @@ open class KotlinNativeLink : AbstractKotlinNativeCompile<KotlinCommonToolOption
 
     init {
         @Suppress("LeakingThis")
-        dependsOn(compilation.map { if (!linkFromSources) listOf(it.compileKotlinTaskHolder) else emptyList() })
+        dependsOn(compilation.map { if (!linkFromSources) listOf(it.compileKotlinTask) else emptyList() })
     }
 
     @Internal
